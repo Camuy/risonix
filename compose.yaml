@@ -86,7 +86,7 @@ services:
       MRI_DATA_DIR: /data
       MRI_DB_PATH: /data/database/mri.sqlite3
       MRI_LOG_LEVEL: ${MRI_LOG_LEVEL:-info}
-      MRI_LOG_FORMAT: json
+      MRI_LOG_FORMAT: ${MRI_LOG_FORMAT:-json}
     volumes:
       - ./data:/data
     init: true
@@ -127,7 +127,7 @@ services:
       MRI_DATA_DIR: /data
       MRI_MODELS_DIR: /data/models
       MRI_LOG_LEVEL: ${MRI_LOG_LEVEL:-info}
-      MRI_LOG_FORMAT: json
+      MRI_LOG_FORMAT: ${MRI_LOG_FORMAT:-json}
       OMP_NUM_THREADS: "4"
     volumes:
       - ./data:/data

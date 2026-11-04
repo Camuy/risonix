@@ -235,6 +235,7 @@ Il dettaglio operativo è tracciato nelle **issue GitHub** (milestone `Phase 0` 
 | `docs/ARCHITECTURE.md`       | Decisioni architetturali e motivazioni                |
 | `docs/ROADMAP.md`            | Piano di sviluppo incrementale                        |
 | `docs/DEPENDENCIES.md`       | Registro dipendenze, versioni e licenze               |
+| `docs/CONFIGURATION.md`      | Variabili d'ambiente, segreti e binding localhost     |
 | `docs/VALIDATION.md`         | Procedure di test e validazione                       |
 | `PROJECT_STATUS.md`          | Stato corrente, decisioni e funzionalità implementate |
 
