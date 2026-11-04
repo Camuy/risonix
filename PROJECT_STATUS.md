@@ -17,13 +17,15 @@ fase.
 - Repository inizializzato con `.gitignore` e `README.md`.
 - **Nessun servizio implementato.** L'ambiente Docker è in costruzione (Fase 0).
 - Struttura di progetto e documentazione di governo create (issue P0-01).
+- Matrice di compatibilità ARM64 e **versioni pinnate** in
+  [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) (issue P0-02); rischio R1 chiuso.
 - Dati locali e PHI **non** versionati; pesi dei modelli **non** versionati.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
-| Phase 0 — Environment & Architecture | 🚧 | Scaffolding e documenti fatti; container/compose/CI da fare |
+| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti e pinning ARM64 fatti; container/compose/CI da fare |
 | Phase 1 — DICOM Foundation | ⬜ | |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
@@ -47,6 +49,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F6 | Container frontend/backend/AI + Compose | ⬜ | P0-03…P0-06 |
 | F7 | CI GitHub Actions | ⬜ | P0-09 |
 | F8 | `.env.example` e gestione segreti | ⬜ | P0-10 |
+| F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
 
 ---
 
@@ -70,8 +73,8 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | # | Tema | Impatto | Riferimento |
 | - | ---- | ------- | ----------- |
-| R1 | Compatibilità ARM64 di PyTorch/MONAI/SimpleITK | Blocca fasi 1/5 | DEPENDENCIES §4 |
-| R2 | Licenza del progetto (e impatto AGPL di Orthanc) | Governo | DEPENDENCIES §5 |
+| ~~R1~~ | ~~Compatibilità ARM64 di PyTorch/MONAI/SimpleITK~~ | **Chiusa** (P0-02) | DEPENDENCIES §4 |
+| R2 | Licenza del progetto (e impatto AGPL di Orthanc) | Governo | DEPENDENCIES §7 |
 | R3 | Soglie definitive di performance | Non bloccante | VALIDATION §5 |
 | R4 | Necessità effettiva di Orthanc nel flusso reale | Non bloccante | ARCHITECTURE D4 |
 
@@ -80,20 +83,20 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 ## 5. Rischi noti
 
 Vedi §17 di [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md#17-rischi-e-decisioni-aperte).
-Principale: **R1 (ARM64)**, da chiudere con la issue P0-02 prima di procedere
-oltre la Fase 0.
+**R1 (ARM64) è chiuso** con la issue P0-02 (matrice e pinning in
+[`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md)). Restano aperti la licenza del
+progetto e il budget di memoria con AI attiva.
 
 ---
 
 ## 6. Prossimi passi immediati
 
-1. P0-02 — matrice di compatibilità e pinning dipendenze ARM64.
-2. P0-03 — Docker Compose con profili, limiti, volumi, healthcheck.
-3. P0-04…P0-06 — container frontend, backend, AI.
-4. P0-07 — Orthanc opzionale.
-5. P0-08 — tooling di sviluppo in Docker.
-6. P0-09 — CI GitHub Actions.
-7. P0-10 — `.env.example` e gestione segreti.
+1. P0-03 — Docker Compose con profili, limiti, volumi, healthcheck.
+2. P0-04…P0-06 — container frontend, backend, AI.
+3. P0-07 — Orthanc opzionale.
+4. P0-08 — tooling di sviluppo in Docker.
+5. P0-09 — CI GitHub Actions.
+6. P0-10 — `.env.example` e gestione segreti.
 
 ---
 
