@@ -1,0 +1,50 @@
+# Risonix — tooling di sviluppo (P0-08).
+#
+# Esegue lint/format/typecheck/test interamente in Docker, senza installazioni
+# native su macOS. Non avvia servizi: esegue comandi una tantum.
+#
+# Uso (via Makefile):
+#   make lint | format | typecheck | test
+# oppure direttamente:
+#   docker compose -f compose.tools.yaml run --rm --build api-tools ruff check .
+#
+# Le sorgenti sono montate in bind mount, così le modifiche locali sono visibili
+# e `format` riscrive i file reali. `node_modules` è un volume nominato, popolato
+# dall'immagine, per non dipendere da installazioni native sul host.
+
+name: risonix-tools
+
+services:
+  frontend-tools:
+    build:
+      context: ./apps/frontend
+      dockerfile: ../../infrastructure/docker/frontend/Dockerfile
+      target: dev
+    image: risonix/frontend:dev
+    working_dir: /app
+    volumes:
+      - ./apps/frontend:/app
+      - frontend_node_modules:/app/node_modules
+
+  api-tools:
+    build:
+      context: ./services/api
+      dockerfile: ../../infrastructure/docker/api/Dockerfile
+      target: dev
+    image: risonix/api:dev
+    working_dir: /app
+    volumes:
+      - ./services/api:/app
+
+  ai-tools:
+    build:
+      context: ./services/ai
+      dockerfile: ../../infrastructure/docker/ai/Dockerfile
+      target: dev
+    image: risonix/ai:dev
+    working_dir: /app
+    volumes:
+      - ./services/ai:/app
+
+volumes:
+  frontend_node_modules:

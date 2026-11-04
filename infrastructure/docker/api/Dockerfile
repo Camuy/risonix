@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 #
 # Risonix backend — FastAPI + Uvicorn su Python 3.12 (slim-bookworm).
-# Target: `runtime` (default) e `test`. Build per linux/arm64. Versioni pinnate (P0-02).
+# Target: `runtime` (default), `dev` (tooling) e `test`. Build per linux/arm64.
+# Versioni pinnate (P0-02).
 
 ARG PYTHON_IMAGE=python:3.12.16-slim-bookworm
 
@@ -28,15 +29,22 @@ USER appuser
 EXPOSE 8000
 
 # ---------------------------------------------------------------------------
-# test — dipendenze di sviluppo + suite pytest (usato in CI / verifica locale)
+# dev — tooling di sviluppo (lint/format/typecheck/test), usato da Makefile/CI
 # ---------------------------------------------------------------------------
-FROM base AS test
+FROM base AS dev
+
 USER root
 COPY requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt
-COPY tests ./tests
 COPY pyproject.toml ./
+COPY tests ./tests
+RUN chown -R appuser:appuser /app
 USER appuser
+
+# ---------------------------------------------------------------------------
+# test — esegue la suite pytest in fase di build
+# ---------------------------------------------------------------------------
+FROM dev AS test
 RUN python -m pytest
 
 # ---------------------------------------------------------------------------

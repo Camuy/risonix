@@ -143,16 +143,19 @@ i valori definitivi sono misurati in Fase 7 (P7-01) e aggiornati qui.
 
 ## 6. CI e qualità del codice
 
-Obiettivi di Fase 0 (issue P0-09 e P0-08), eseguiti su `linux/arm64`:
+Obiettivi di Fase 0 (issue P0-09 e P0-08), eseguiti su `linux/arm64`. Gli stessi
+comandi sono disponibili in locale via `Makefile` (vedi
+[`docs/DEVELOPMENT.md`](DEVELOPMENT.md)):
 
-- Build delle immagini Docker.
-- Lint (frontend e backend).
-- Typecheck (TypeScript e Python).
-- Test automatici.
-- Verifica che **nessun PHI/segreto** entri nel repository (`git check-ignore`
-  sui path sensibili, scansione segreti).
+| Controllo | Comando locale | In CI |
+| --------- | -------------- | ----- |
+| Lint | `make lint` | riusato |
+| Typecheck | `make typecheck` | riusato |
+| Test | `make test` | riusato |
+| Compose | `make config` | riusato |
+| Build immagini | `make up` / buildx | workflow dedicato |
 
-Pipeline considerata **bloccante**: un fallimento impedisce il merge.
+La pipeline è considerata **bloccante**: un fallimento impedisce il merge.
 
 ---
 
