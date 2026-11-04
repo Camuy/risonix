@@ -3,7 +3,7 @@
 | Campo | Valore |
 | ----- | ------ |
 | Stato | Pre-alpha (*Phase 0*) — procedure in definizione |
-| Ultima modifica | 2026-11-04 |
+| Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](../MASTER_SPECIFICATION.md) |
 
 Questo documento definisce **come si verifica** che il software sia corretto.
@@ -82,6 +82,23 @@ mm sulle fixture sintetiche) definite all'implementazione della fase.
 | Persistenza | i file in `data/` sopravvivono a `docker compose restart` |
 | AI non di default | `docker compose config --services` **non** include `mri-ai` |
 | Nessun tag `latest` | scansione di `compose.yaml` e dei Dockerfile |
+
+### 4.2 Verifica del servizio AI (P0-06)
+
+| Verifica | Comando / criterio |
+| -------- | ------------------ |
+| Avvio opzionale | `docker compose --profile ai up -d mri-ai` → servizio su `127.0.0.1:8001` |
+| Health | `curl -fsS http://127.0.0.1:8001/health` risponde `200` con `status=ok` |
+| Registry senza pesi | `GET /api/models` elenca gli adapter con `loaded=false`; nessun download automatico |
+| Import ML lazy | l'avvio non importa `torch`/`monai` (import confinati in `ModelAdapter.load`) |
+| Memoria a riposo | valore in `/health` (`memory_mb`) e `docker stats --no-stream` |
+| Limite | `docker stats` entro **4 GB** / 4 CPU (budget §5) |
+
+**Consumo a riposo (misura 2026-11-05).** Processo `uvicorn app.main:app` senza
+pesi caricati: **~46 MiB** (`memory_mb≈46`, RSS ~44 MiB). Poiché `torch`/`monai`
+non sono importati all'avvio, il footprint a riposo coincide con la baseline
+Python/FastAPI; il picco si misura solo al caricamento di un modello (Fase 5).
+Valore da riconfermare con `docker stats` al primo build ARM64 dell'immagine.
 
 ---
 

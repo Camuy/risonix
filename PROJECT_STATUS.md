@@ -3,7 +3,7 @@
 | Campo | Valore |
 | ----- | ------ |
 | Stato complessivo | **Pre-alpha** — Fase 0 in corso |
-| Ultima modifica | 2026-11-04 |
+| Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
 Documento di governo con lo **stato corrente**, le **decisioni prese** e le
@@ -15,7 +15,11 @@ fase.
 ## 1. Stato attuale
 
 - Repository inizializzato con `.gitignore` e `README.md`.
-- **Nessun servizio implementato.** L'ambiente Docker è in costruzione (Fase 0).
+- Container frontend React/TypeScript/Vite (dev) + Nginx (prod) — issue P0-04.
+- Servizio backend `mri-api` FastAPI+Uvicorn, modulare, con `/health` e
+  `/api/version` — issue P0-05.
+- Servizio AI `mri-ai` (PyTorch + MONAI CPU, opzionale, profilo `ai`) con
+  registry/adapter e nessun peso caricato all'avvio — issue P0-06.
 - Struttura di progetto e documentazione di governo create (issue P0-01).
 - Matrice di compatibilità ARM64 e **versioni pinnate** in
   [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) (issue P0-02); rischio R1 chiuso.
@@ -27,7 +31,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
-| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64 e Compose fatti; container/CI da fare |
+| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64, Compose e container frontend/backend/AI fatti; Orthanc, tooling e CI da fare |
 | Phase 1 — DICOM Foundation | ⬜ | |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
@@ -48,7 +52,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F3 | Documenti di governo (`ARCHITECTURE`, `ROADMAP`, `DEPENDENCIES`, `VALIDATION`) | ✅ | P0-01 |
 | F4 | `.gitignore` esteso: struttura dati tracciata, PHI/pesi mai versionati | ✅ | P0-01 |
 | F5 | Link del README ai documenti di progetto | ✅ | P0-01 |
-| F6 | Container frontend/backend/AI + Compose | ⬜ | P0-03…P0-06 |
+| F6 | Container frontend/backend/AI + Compose | ✅ | P0-03…P0-06 |
 | F7 | CI GitHub Actions | ⬜ | P0-09 |
 | F8 | `.env.example` e gestione segreti | ⬜ | P0-10 |
 | F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
@@ -94,11 +98,10 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. P0-04…P0-06 — container frontend, backend, AI.
-2. P0-07 — Orthanc opzionale.
-3. P0-08 — tooling di sviluppo in Docker.
-4. P0-09 — CI GitHub Actions.
-5. P0-10 — `.env.example` e gestione segreti.
+1. P0-07 — Orthanc opzionale.
+2. P0-08 — tooling di sviluppo in Docker.
+3. P0-09 — CI GitHub Actions.
+4. P0-10 — `.env.example` e gestione segreti.
 
 ---
 
