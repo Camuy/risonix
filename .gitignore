@@ -1,1 +1,180 @@
-data/
+# =============================================================================
+# MRI Explorer / Risonix — .gitignore
+# Repository: https://github.com/Camuy/risonix
+#
+# Regola d'oro: i dati clinici (PHI) e i pesi dei modelli NON entrano MAI nel
+# repository. Vedi docs/DEPENDENCIES.md e docs/ARCHITECTURE.md.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Dati medici e PHI (Protected Health Information) — MAI committare
+# -----------------------------------------------------------------------------
+# Si ignorano i CONTENUTI di data/ ma si conserva la struttura delle directory
+# (via .gitkeep), così che i dati reali non siano mai tracciati.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+research/experiments/
+research/metrics/
+*.dcm
+*.dicom
+*.DICOM
+*.nii
+*.nii.gz
+*.nrrd
+*.nrrd.gz
+*.mha
+*.mhd
+*.seg.nrrd
+*.stl
+*.obj
+*.ply
+DICOMDIR
+DICOMDIR.bak
+
+# -----------------------------------------------------------------------------
+# Modelli e pesi AI (mai versionati: grandi + licenze variabili)
+# -----------------------------------------------------------------------------
+models/
+weights/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.h5
+*.tflite
+*.bin
+
+# -----------------------------------------------------------------------------
+# Segreti e configurazione locale
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+*.secret
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+.python-version
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+*.ipynb_checkpoints/
+
+# -----------------------------------------------------------------------------
+# Node / Frontend
+# -----------------------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+.cache/
+.parcel-cache/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+.eslintcache
+.pnpm-store/
+.npm/
+.yarn/
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+*.pid
+docker-compose.override.yml
+.docker/
+docker-data/
+
+# -----------------------------------------------------------------------------
+# Database locale
+# -----------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+
+# -----------------------------------------------------------------------------
+# Log e artefatti runtime
+# -----------------------------------------------------------------------------
+*.log
+logs/
+*.tmp
+tmp/
+temp/
+*.bak
+*.swp
+
+# -----------------------------------------------------------------------------
+# Editor / IDE
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.code-workspace
+*.sublime-*
+project.xcworkspace/
+xcuserdata/
+
+# -----------------------------------------------------------------------------
+# Sistema operativo
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# -----------------------------------------------------------------------------
+# Eccezioni: mantieni la struttura di data/ anche dove il nome collide con
+# regole globali (es. models/). Il contenuto resta comunque ignorato da /data/**.
+# -----------------------------------------------------------------------------
+!data/models/
+!data/models/.gitkeep

@@ -1,0 +1,116 @@
+# Validazione e test — MRI Explorer · Risonix
+
+| Campo | Valore |
+| ----- | ------ |
+| Stato | Pre-alpha (*Phase 0*) — procedure in definizione |
+| Ultima modifica | 2026-11-04 |
+| Riferimento | [`MASTER_SPECIFICATION.md`](../MASTER_SPECIFICATION.md) |
+
+Questo documento definisce **come si verifica** che il software sia corretto.
+Le procedure vengono rese eseguibili man mano che le fasi avanzano. In Fase 0
+si stabiliscono framework, criteri e soglie.
+
+> **Regola.** Nessuna funzionalità è dichiarata *fatta* senza test. Ogni
+> deliverable di fase deve avere evidenza di verifica (test automatici o
+> procedura documentata con esito).
+
+---
+
+## 1. Livelli di test
+
+| Livello | Ambito | Strumenti previsti |
+| ------- | ------ | ------------------ |
+| Unit | Parsing, geometria, conversioni, utility | `pytest` (Python), framework frontend TBD |
+| Integration | API ↔ filesystem ↔ SQLite, job asincroni | `pytest` + client HTTP |
+| Geometry | Correttezza spaziale su phantom sintetici | `pytest` + fixture DICOM sintetiche |
+| End-to-end | Flusso completo sul dataset RM del ginocchio (9 serie) | test API + verifica viewer manuale/assistita |
+| Resilience | Comportamento con servizi spenti | Docker Compose (profili) |
+| Performance | Rispetto dei budget (§13 della specifica master) | benchmark P7-01 |
+| Persistence | Sopravvivenza a restart e restore | procedure P7-04 |
+
+---
+
+## 2. Test di geometria (critici)
+
+La geometria è validata con **phantom sintetici** a valori noti, prima di ogni
+analisi di immagini reali.
+
+| Proprietà | Cosa si verifica | Fase |
+| --------- | ---------------- | ---- |
+| Ordinamento slice | Sequenza corretta rispetto a `ImagePositionPatient`/normale | 1 |
+| Spacing | Coerenza tra `PixelSpacing` e distanza inter-slice | 1 |
+| Orientamento | Versori coerenti con `ImageOrientationPatient` | 1 |
+| Origine | Corrispondenza con `ImagePositionPatient` della prima slice | 1 |
+| Gap slice | Rilevamento di gap irregolari (nessuna interpolazione silenziosa) | 1 |
+| Rescale | Applicazione di slope/intercept alle unità fisiche | 1 |
+| Volume ↔ DICOM | Round-trip DICOM → NIfTI/NRRD → geometria conservata | 1 |
+| MPR ↔ volume | Crosshair e piani coerenti con la geometria del volume | 3 |
+| 3D ↔ volume | Superficie/mesh allineata al volume e alle misure | 3 |
+| Segmentazione | Maschera allineata al volume di riferimento | 4 |
+
+Criterio di accettazione: **tolleranze esplicite** (es. errore posizione ≤ 1e-3
+mm sulle fixture sintetiche) definite all'implementazione della fase.
+
+---
+
+## 3. Dataset di riferimento
+
+- **Primario:** esame **RM del ginocchio** con più serie (riferimento: 9 serie).
+- I dati reali **non** entrano nel repository (solo locale, `data/` gitignored).
+- Per i test automatici si usa un **generatore di DICOM sintetici** (issue
+  P1-09), così che la CI sia riproducibile senza PHI.
+
+---
+
+## 4. Test di resilienza e persistenza
+
+- **AI spento:** con profilo `ai` non attivo, il viewer e l'API restano
+  operativi; le funzioni AI risultano non disponibili in modo esplicito e non
+  bloccante (P5-06).
+- **Restart:** dopo `docker compose restart`, metadati, volumi e segmentazioni
+  restano coerenti (P7-04).
+- **Backup/restore:** ripristino completo da backup di SQLite + `data/` (P7-04).
+
+---
+
+## 5. Budget di performance e misure
+
+Riferimento: §13 della specifica master. Le soglie iniziali sono **obiettivi**;
+i valori definitivi sono misurati in Fase 7 (P7-01) e aggiornati qui.
+
+| Metrica | Obiettivo |
+| ------- | --------- |
+| Avvio stack base | < 60 s a container caldi |
+| Prima immagine visibile | < 2 s |
+| Navigazione stack (≥ 100 slice) | fluida su CPU |
+| Memoria API | entro 1.5 GB |
+| Memoria AI | entro 4 GB |
+
+---
+
+## 6. CI e qualità del codice
+
+Obiettivi di Fase 0 (issue P0-09 e P0-08), eseguiti su `linux/arm64`:
+
+- Build delle immagini Docker.
+- Lint (frontend e backend).
+- Typecheck (TypeScript e Python).
+- Test automatici.
+- Verifica che **nessun PHI/segreto** entri nel repository (`git check-ignore`
+  sui path sensibili, scansione segreti).
+
+Pipeline considerata **bloccante**: un fallimento impedisce il merge.
+
+---
+
+## 7. Checklist di accettazione (per fase)
+
+Prima di chiudere una fase:
+
+- [ ] Tutte le issue della fase: criteri di accettazione soddisfatti
+- [ ] Test unit/integration/geometry verdi
+- [ ] Build ARM64 verde
+- [ ] Lint + typecheck verdi
+- [ ] Documentazione aggiornata (README, docs, `PROJECT_STATUS.md`)
+- [ ] Nessun PHI/segreto/peso tracciato
+- [ ] Limiti di risorsa rispettati o deviazione documentata
