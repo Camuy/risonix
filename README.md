@@ -37,8 +37,9 @@ La specifica tecnica completa è in [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICA
 
 ## Stato del progetto
 
-**Pre-alpha** — l'ambiente Docker è in costruzione (*Phase 0*). Nessun servizio
-applicativo è ancora implementato.
+**Pre-alpha** — l'ambiente Docker è in costruzione (*Phase 0*). Sono già
+disponibili i container di frontend, backend e AI; Orthanc, tooling e CI sono in
+lavorazione.
 
 - Stato corrente, decisioni e funzionalità: [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 - Pianificazione incrementale: [`docs/ROADMAP.md`](docs/ROADMAP.md)
@@ -153,6 +154,30 @@ COMPOSE_PROFILES=prod docker compose up --build
 - API + OpenAPI: http://localhost:8000/docs
 - AI service: http://localhost:8001
 - Orthanc: http://localhost:8042
+
+### Archivio DICOM opzionale (Orthanc — profilo `dicom`)
+
+Orthanc **non** è richiesto dallo stack base: parte solo con il profilo `dicom`
+(oppure `full`).
+
+```bash
+# Avvio con Orthanc, insieme allo stack base
+docker compose --profile default --profile dicom up -d
+
+# Solo Orthanc (senza frontend/API)
+docker compose --profile dicom up -d orthanc
+```
+
+- **HTTP / DICOMweb:** http://localhost:8042 — radice DICOMweb: `/dicom-web`
+  (es. `GET /dicom-web/studies`). Server DICOM (C-STORE/C-FIND) su `4242`.
+- **Credenziali:** default `orthanc` / `orthanc`, sovrascrivibili in `.env` con
+  `MRI_ORTHANC_USER` e `MRI_ORTHANC_PASSWORD`.
+- **Persistenza:** i dati risiedono in `data/orthanc/` (bind mount) e
+  sopravvivono a `docker compose restart`.
+- **Sicurezza:** accesso remoto disabilitato (`RemoteAccessAllowed=false`),
+  autenticazione attiva, porte esposte solo su `127.0.0.1`.
+- **Configurazione:** `infrastructure/orthanc/orthanc.json` (montata in sola
+  lettura); le variabili `ORTHANC__*` in `compose.yaml` hanno precedenza.
 
 ---
 

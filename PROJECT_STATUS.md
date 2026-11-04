@@ -20,6 +20,8 @@ fase.
   `/api/version` — issue P0-05.
 - Servizio AI `mri-ai` (PyTorch + MONAI CPU, opzionale, profilo `ai`) con
   registry/adapter e nessun peso caricato all'avvio — issue P0-06.
+- Servizio Orthanc opzionale (profilo `dicom`), storage persistente in
+  `data/orthanc/`, DICOMweb e autenticazione — issue P0-07.
 - Struttura di progetto e documentazione di governo create (issue P0-01).
 - Matrice di compatibilità ARM64 e **versioni pinnate** in
   [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) (issue P0-02); rischio R1 chiuso.
@@ -31,7 +33,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
-| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64, Compose e container frontend/backend/AI fatti; Orthanc, tooling e CI da fare |
+| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64, Compose e container frontend/backend/AI/Orthanc fatti; tooling e CI da fare |
 | Phase 1 — DICOM Foundation | ⬜ | |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
@@ -57,6 +59,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F8 | `.env.example` e gestione segreti | ⬜ | P0-10 |
 | F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
 | F10 | `compose.yaml`: profili, limiti risorse, volumi, healthcheck, shutdown | ✅ | P0-03 |
+| F11 | Orthanc opzionale (profilo `dicom`), storage persistente, DICOMweb | ✅ | P0-07 |
 
 ---
 
@@ -98,10 +101,9 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. P0-07 — Orthanc opzionale.
-2. P0-08 — tooling di sviluppo in Docker.
-3. P0-09 — CI GitHub Actions.
-4. P0-10 — `.env.example` e gestione segreti.
+1. P0-08 — tooling di sviluppo in Docker.
+2. P0-09 — CI GitHub Actions.
+3. P0-10 — `.env.example` e gestione segreti.
 
 ---
 
