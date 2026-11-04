@@ -1,0 +1,101 @@
+# Risonix — integrazione continua (P0-09).
+#
+# Job: qualità del codice (stessi comandi del Makefile), validazione Compose e
+# scansione segreti, build delle immagini linux/arm64 (QEMU solo per la build).
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality (lint, typecheck, test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Lint
+        run: make lint
+
+      - name: Typecheck
+        run: make typecheck
+
+      - name: Test
+        run: make test
+
+  compose-and-secrets:
+    name: Compose & secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate compose.yaml
+        run: docker compose config -q
+
+      - name: Validate compose.tools.yaml
+        run: docker compose -f compose.tools.yaml config -q
+
+      - name: Nessun tag latest
+        run: |
+          if grep -RnE 'latest' compose.yaml compose.tools.yaml infrastructure/docker | grep -vE ':[0-9]+:[[:space:]]*#'; then
+            echo "ERRORE: trovato tag 'latest'" >&2
+            exit 1
+          fi
+
+      - name: Scansione segreti
+        run: ./scripts/ci/check-no-secrets.sh
+
+  build-arm64:
+    name: Build arm64 (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: frontend
+            context: ./apps/frontend
+            dockerfile: infrastructure/docker/frontend/Dockerfile
+            target: prod
+          - name: api
+            context: ./services/api
+            dockerfile: infrastructure/docker/api/Dockerfile
+            target: runtime
+          - name: ai
+            context: ./services/ai
+            dockerfile: infrastructure/docker/ai/Dockerfile
+            target: runtime
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build linux/arm64
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          platforms: linux/arm64
+          push: false
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
