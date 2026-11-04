@@ -35,9 +35,12 @@ DICOMDIR.bak
 # -----------------------------------------------------------------------------
 # Modelli e pesi AI (mai versionati: grandi + licenze variabili)
 # -----------------------------------------------------------------------------
-models/
-weights/
-checkpoints/
+/data/models/
+/data/weights/
+/data/checkpoints/
+research/**/models/
+research/**/weights/
+research/**/checkpoints/
 *.pt
 *.pth
 *.ckpt
@@ -178,6 +181,3 @@ desktop.ini
 # -----------------------------------------------------------------------------
 !data/models/
 !data/models/.gitkeep
-# I pacchetti SORGENTE chiamati `models/` non sono pesi: vanno versionati.
-!services/api/app/models/
-!services/api/app/models/*.py

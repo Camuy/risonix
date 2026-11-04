@@ -1,0 +1,7 @@
+# Dipendenze ML — solo CPU, nessuna variante CUDA/ROCm (host arm64, D2).
+# torch è prelevato dall'indice CPU di PyTorch; MONAI (e le altre) da PyPI.
+--index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://pypi.org/simple
+
+torch==2.15.0
+monai==1.6.1
