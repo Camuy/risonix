@@ -178,3 +178,6 @@ desktop.ini
 # -----------------------------------------------------------------------------
 !data/models/
 !data/models/.gitkeep
+# I pacchetti SORGENTE chiamati `models/` non sono pesi: vanno versionati.
+!services/api/app/models/
+!services/api/app/models/*.py
