@@ -1,0 +1,248 @@
+# Risonix / MRI Explorer — Docker Compose
+#
+# Profili: default, ai, dicom, full, prod (vedi docs/ARCHITECTURE.md §4).
+# Il profilo attivo si imposta in `.env` tramite COMPOSE_PROFILES (default).
+#
+#   cp .env.example .env
+#   docker compose up --build                        # default: frontend + api
+#   docker compose --profile ai up --build           # + mri-ai
+#   docker compose --profile dicom up --build        # + orthanc
+#   docker compose --profile full up --build         # default + ai + dicom
+#   COMPOSE_PROFILES=prod docker compose up --build  # prod: frontend nginx + api + nginx
+#
+# Tutte le dipendenze sono `linux/arm64` e con versione pinnata (docs/DEPENDENCIES.md).
+# Nessun tag `latest`. Servizi esposti solo su localhost (ARCHITECTURE D8).
+
+name: risonix
+
+networks:
+  mri-net:
+    name: risonix-net
+    driver: bridge
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Frontend (dev) — React + TypeScript + Vite, hot reload, porta 5173
+  # Limite: 256 MB / 0.5 CPU
+  # ---------------------------------------------------------------------------
+  mri-frontend:
+    profiles: ["default", "full"]
+    image: risonix/frontend:dev
+    build:
+      context: ./apps/frontend
+      dockerfile: ../../infrastructure/docker/frontend/Dockerfile
+      target: dev
+    ports:
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_FRONTEND_PORT:-5173}:5173"
+    environment:
+      NODE_ENV: development
+      VITE_API_BASE_URL: ${MRI_API_PUBLIC_URL:-http://localhost:8000}
+    volumes:
+      - ./apps/frontend:/app:delegated
+      - /app/node_modules
+    depends_on:
+      mri-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    stop_grace_period: 10s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: "256M"
+    networks: [mri-net]
+
+  # ---------------------------------------------------------------------------
+  # Backend API — FastAPI + Uvicorn, porta 8000
+  # Limite: 1.5 GB / 2 CPU
+  # ---------------------------------------------------------------------------
+  mri-api:
+    profiles: ["default", "prod", "full"]
+    image: risonix/api:dev
+    build:
+      context: ./services/api
+      dockerfile: ../../infrastructure/docker/api/Dockerfile
+    ports:
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_API_PORT:-8000}:8000"
+    environment:
+      MRI_ENV: ${MRI_ENV:-development}
+      MRI_DATA_DIR: /data
+      MRI_DB_PATH: /data/database/mri.sqlite3
+      MRI_LOG_LEVEL: ${MRI_LOG_LEVEL:-info}
+      MRI_LOG_FORMAT: json
+    volumes:
+      - ./data:/data
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status==200 else 1)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: "1536M"
+    networks: [mri-net]
+
+  # ---------------------------------------------------------------------------
+  # AI service — PyTorch + MONAI (CPU), porta 8001, profilo `ai`
+  # Limite: 4 GB / 4 CPU. Non parte senza il profilo `ai`.
+  # ---------------------------------------------------------------------------
+  mri-ai:
+    profiles: ["ai", "full"]
+    image: risonix/ai:dev
+    build:
+      context: ./services/ai
+      dockerfile: ../../infrastructure/docker/ai/Dockerfile
+    ports:
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_AI_PORT:-8001}:8001"
+    environment:
+      MRI_ENV: ${MRI_ENV:-development}
+      MRI_DATA_DIR: /data
+      MRI_MODELS_DIR: /data/models
+      MRI_LOG_LEVEL: ${MRI_LOG_LEVEL:-info}
+      MRI_LOG_FORMAT: json
+      OMP_NUM_THREADS: "4"
+    volumes:
+      - ./data:/data
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health', timeout=3).status==200 else 1)"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: "4096M"
+    networks: [mri-net]
+
+  # ---------------------------------------------------------------------------
+  # Orthanc (opzionale) — archivio DICOM, porta 8042, profilo `dicom`
+  # Limite: 512 MB / 1 CPU
+  # ---------------------------------------------------------------------------
+  orthanc:
+    profiles: ["dicom", "full"]
+    image: orthancteam/orthanc:26.9.1
+    ports:
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_ORTHANC_HTTP_PORT:-8042}:8042"
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_ORTHANC_DICOM_PORT:-4242}:4242"
+    environment:
+      ORTHANC__NAME: risonix
+      ORTHANC__REGISTERED_USERS: '{"${MRI_ORTHANC_USER:-orthanc}":"${MRI_ORTHANC_PASSWORD:-orthanc}"}'
+      ORTHANC__DICOM_WEB__ENABLE: "true"
+      ORTHANC__REMOTE_ACCESS_ALLOWED: "false"
+    volumes:
+      - ./data/orthanc:/var/lib/orthanc/db
+      - ./infrastructure/orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8042/system || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+    networks: [mri-net]
+
+  # ---------------------------------------------------------------------------
+  # Frontend (prod) — build statica servita da Nginx, porta 3000, profilo `prod`
+  # Limite: 256 MB / 0.5 CPU
+  # ---------------------------------------------------------------------------
+  mri-frontend-prod:
+    profiles: ["prod"]
+    image: risonix/frontend:prod
+    build:
+      context: ./apps/frontend
+      dockerfile: ../../infrastructure/docker/frontend/Dockerfile
+      target: prod
+    ports:
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_FRONTEND_PROD_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    stop_grace_period: 10s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: "256M"
+    networks: [mri-net]
+
+  # ---------------------------------------------------------------------------
+  # Nginx reverse proxy (profila `prod`) — porta 80
+  # Funge da ingresso: / → frontend, /api → mri-api
+  # ---------------------------------------------------------------------------
+  nginx:
+    profiles: ["prod"]
+    image: nginx:1.30.6-alpine
+    ports:
+      - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_PROXY_PORT:-80}:80"
+    volumes:
+      - ./infrastructure/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      mri-frontend-prod:
+        condition: service_healthy
+      mri-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    stop_grace_period: 10s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "128M"
+    networks: [mri-net]

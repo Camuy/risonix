@@ -151,8 +151,11 @@ nessuna telemetria, segreti via `.env`, dati/PHI e pesi mai versionati.
 | `full` | default + ai + dicom | Tutto tranne prod |
 | `prod` | frontend (Nginx) + api + nginx | Deployment locale di produzione |
 
-Healthcheck, limiti di risorsa e policy di shutdown sono specificati nella issue
-P0-03 e verificati in Fase 7 (P7-03).
+Healthcheck, limiti di risorsa e policy di shutdown sono definiti in
+[`compose.yaml`](../compose.yaml) (issue P0-03) e verificati in Fase 7 (P7-03).
+Il profilo attivo del comando senza `--profile` è impostato da
+`COMPOSE_PROFILES` in `.env` (default: `default`); passando `--profile` da riga
+di comando `COMPOSE_PROFILES` viene ignorato (semantica di Docker Compose).
 
 ---
 

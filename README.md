@@ -70,8 +70,23 @@ Applicazione composta da servizi Docker indipendenti, orchestrati con Docker Com
 | `orthanc`     | Archivio DICOM opzionale (DICOMweb, Q/R)                                        | 8042             | `dicom`   |
 | `nginx`       | Reverse proxy per il profilo di produzione                                      | 80               | `prod`    |
 
-Profili Compose previsti: `default` (frontend + API), `ai`, `dicom`, `full`, `prod`.
-Il servizio AI **non** parte di default: la piattaforma resta utilizzabile quando `mri-ai` è spento.
+Profili Compose e contenuto:
+
+| Profilo   | Servizi avviati                          | Comando |
+| --------- | ---------------------------------------- | ------- |
+| `default` | `mri-frontend` + `mri-api`               | `docker compose up` |
+| `ai`      | `+ mri-ai`                               | `docker compose --profile default --profile ai up` |
+| `dicom`   | `+ orthanc`                              | `docker compose --profile default --profile dicom up` |
+| `full`    | `default` + `ai` + `dicom`               | `docker compose --profile full up` |
+| `prod`    | `mri-frontend-prod` (Nginx) + `mri-api` + `nginx` | `COMPOSE_PROFILES=prod docker compose up` |
+
+Il profilo attivo per il comando senza `--profile` è impostato in `.env`
+(`COMPOSE_PROFILES=default`). Il servizio AI **non** parte di default: la
+piattaforma resta utilizzabile quando `mri-ai` è spento.
+
+Tutti i servizi hanno **healthcheck**, **limiti di risorsa** e **policy di
+shutdown** definiti in `compose.yaml`; i dati persistenti risiedono in `data/`
+(bind mount) e sopravvivono al riavvio dei container.
 
 Limiti di risorsa iniziali per container:
 
@@ -118,14 +133,20 @@ cd risonix
 # 2. Creare il file di configurazione locale
 cp .env.example .env
 
-# 3. Avviare lo stack base (frontend + API)
+# 3. Avviare lo stack base (frontend + API) — profilo `default`
 docker compose up --build
 
-# 4. (Opzionale) abilitare il servizio AI
-docker compose --profile ai up --build
+# 4. (Opzionale) abilitare il servizio AI — profilo `ai`
+docker compose --profile default --profile ai up --build
 
-# 5. (Opzionale) abilitare Orthanc
-docker compose --profile dicom up --build
+# 5. (Opzionale) abilitare Orthanc — profilo `dicom`
+docker compose --profile default --profile dicom up --build
+
+# 6. (Opzionale) tutta la piattaforma (base + AI + Orthanc) — profilo `full`
+docker compose --profile full up --build
+
+# 7. (Opzionale) profilo di produzione locale (React su Nginx + reverse proxy)
+COMPOSE_PROFILES=prod docker compose up --build
 ```
 
 - Frontend (dev): http://localhost:5173

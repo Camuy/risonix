@@ -71,6 +71,18 @@ mm sulle fixture sintetiche) definite all'implementazione della fase.
   restano coerenti (P7-04).
 - **Backup/restore:** ripristino completo da backup di SQLite + `data/` (P7-04).
 
+### 4.1 Verifica dell'ambiente Compose (P0-03)
+
+| Verifica | Comando / criterio |
+| -------- | ------------------ |
+| Config valido per ogni profilo | `docker compose --profile <p> config -q` per `default`, `ai`, `dicom`, `full`, `prod` |
+| Servizi attesi per profilo | `docker compose --profile <p> config --services` |
+| Limiti applicati | `docker stats --no-stream` entro i budget §5 |
+| Healthcheck | stato `healthy` per ogni servizio avviato |
+| Persistenza | i file in `data/` sopravvivono a `docker compose restart` |
+| AI non di default | `docker compose config --services` **non** include `mri-ai` |
+| Nessun tag `latest` | scansione di `compose.yaml` e dei Dockerfile |
+
 ---
 
 ## 5. Budget di performance e misure

@@ -19,13 +19,15 @@ fase.
 - Struttura di progetto e documentazione di governo create (issue P0-01).
 - Matrice di compatibilità ARM64 e **versioni pinnate** in
   [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) (issue P0-02); rischio R1 chiuso.
+- `compose.yaml` con profili `default`/`ai`/`dicom`/`full`/`prod`, healthcheck,
+  limiti di risorsa, volumi persistenti e logging (issue P0-03).
 - Dati locali e PHI **non** versionati; pesi dei modelli **non** versionati.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
-| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti e pinning ARM64 fatti; container/compose/CI da fare |
+| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64 e Compose fatti; container/CI da fare |
 | Phase 1 — DICOM Foundation | ⬜ | |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
@@ -50,6 +52,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F7 | CI GitHub Actions | ⬜ | P0-09 |
 | F8 | `.env.example` e gestione segreti | ⬜ | P0-10 |
 | F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
+| F10 | `compose.yaml`: profili, limiti risorse, volumi, healthcheck, shutdown | ✅ | P0-03 |
 
 ---
 
@@ -91,12 +94,11 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. P0-03 — Docker Compose con profili, limiti, volumi, healthcheck.
-2. P0-04…P0-06 — container frontend, backend, AI.
-3. P0-07 — Orthanc opzionale.
-4. P0-08 — tooling di sviluppo in Docker.
-5. P0-09 — CI GitHub Actions.
-6. P0-10 — `.env.example` e gestione segreti.
+1. P0-04…P0-06 — container frontend, backend, AI.
+2. P0-07 — Orthanc opzionale.
+3. P0-08 — tooling di sviluppo in Docker.
+4. P0-09 — CI GitHub Actions.
+5. P0-10 — `.env.example` e gestione segreti.
 
 ---
 
