@@ -28,6 +28,8 @@ fase.
 - `compose.yaml` con profili `default`/`ai`/`dicom`/`full`/`prod`, healthcheck,
   limiti di risorsa, volumi persistenti e logging (issue P0-03).
 - Dati locali e PHI **non** versionati; pesi dei modelli **non** versionati.
+- Configurazione d'ambiente documentata (`.env.example` + `docs/CONFIGURATION.md`),
+  validazione fail-fast e servizi solo su localhost — issue P0-10.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
@@ -56,7 +58,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F5 | Link del README ai documenti di progetto | ✅ | P0-01 |
 | F6 | Container frontend/backend/AI + Compose | ✅ | P0-03…P0-06 |
 | F7 | CI GitHub Actions | ⬜ | P0-09 |
-| F8 | `.env.example` e gestione segreti | ⬜ | P0-10 |
+| F8 | `.env.example` e gestione segreti | ✅ | P0-10 |
 | F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
 | F10 | `compose.yaml`: profili, limiti risorse, volumi, healthcheck, shutdown | ✅ | P0-03 |
 | F11 | Orthanc opzionale (profilo `dicom`), storage persistente, DICOMweb | ✅ | P0-07 |
@@ -103,7 +105,6 @@ progetto e il budget di memoria con AI attiva.
 
 1. P0-08 — tooling di sviluppo in Docker.
 2. P0-09 — CI GitHub Actions.
-3. P0-10 — `.env.example` e gestione segreti.
 
 ---
 

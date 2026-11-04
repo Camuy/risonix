@@ -112,6 +112,18 @@ Valore da riconfermare con `docker stats` al primo build ARM64 dell'immagine.
 | Persistenza | uno studio importato resta leggibile dopo `docker compose restart orthanc` |
 | Config locale | `orthanc.json` montato in sola lettura; gli override `ORTHANC__*` hanno precedenza |
 
+### 4.4 Verifica di configurazione e segreti (P0-10)
+
+| Verifica | Comando / criterio |
+| -------- | ------------------ |
+| Avvio con `.env` assente | lo stack parte con i default sicuri (`MRI_BIND_ADDR=127.0.0.1`, log `info`/`json`) |
+| Validazione fail-fast | `MRI_LOG_FORMAT=xml` / `MRI_LOG_LEVEL=verbose` impediscono l'avvio con errore esplicito |
+| Normalizzazione | `MRI_LOG_LEVEL=DEBUG` → livello `debug` |
+| Copertura variabili | ogni `${...}` di `compose.yaml` è documentata in `.env.example` e `docs/CONFIGURATION.md` |
+| Binding | tutte le porte pubblicate su `127.0.0.1` (verifica su `docker compose config`) |
+| Nessun segreto committato | `.gitignore` esclude `.env`/`*.key`; scansione segreti in CI (P0-09) |
+| Nessun segreto nei log | i log strutturati non includono valori di configurazione sensibili |
+
 ---
 
 ## 5. Budget di performance e misure
