@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
 # Risonix AI — FastAPI + PyTorch/MONAI CPU su Python 3.12 (slim-bookworm).
-# Target: `runtime` (default) e `test`. Build per linux/arm64. Versioni pinnate (P0-02).
-# Nessun peso di modello è incluso nell'immagine né scaricato all'avvio.
+# Target: `runtime` (default), `dev` (tooling) e `test`. Build per linux/arm64.
+# Versioni pinnate (P0-02). Nessun peso di modello incluso o scaricato all'avvio.
 
 ARG PYTHON_IMAGE=python:3.12.16-slim-bookworm
 
@@ -30,14 +30,21 @@ USER appuser
 EXPOSE 8001
 
 # ---------------------------------------------------------------------------
-# test — dipendenze di sviluppo + suite pytest (senza runtime ML: più veloce)
+# dev — tooling di sviluppo (senza runtime ML: più veloce), usato da Makefile/CI
 # ---------------------------------------------------------------------------
-FROM base AS test
+FROM base AS dev
+
 USER root
 RUN pip install --no-cache-dir -r requirements-dev.txt
-COPY tests ./tests
 COPY pyproject.toml ./
+COPY tests ./tests
+RUN chown -R appuser:appuser /app
 USER appuser
+
+# ---------------------------------------------------------------------------
+# test — esegue la suite pytest in fase di build
+# ---------------------------------------------------------------------------
+FROM dev AS test
 RUN python -m pytest
 
 # ---------------------------------------------------------------------------

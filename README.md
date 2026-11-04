@@ -155,6 +155,10 @@ COMPOSE_PROFILES=prod docker compose up --build
 - AI service: http://localhost:8001
 - Orthanc: http://localhost:8042
 
+> **Tooling.** I comandi di sviluppo (lint, format, typecheck, test) girano in
+> Docker tramite il `Makefile`: `make help`, `make up`, `make lint`, `make test`.
+> Dettagli in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+
 ### Archivio DICOM opzionale (Orthanc — profilo `dicom`)
 
 Orthanc **non** è richiesto dallo stack base: parte solo con il profilo `dicom`
@@ -236,6 +240,7 @@ Il dettaglio operativo è tracciato nelle **issue GitHub** (milestone `Phase 0` 
 | `docs/ROADMAP.md`            | Piano di sviluppo incrementale                        |
 | `docs/DEPENDENCIES.md`       | Registro dipendenze, versioni e licenze               |
 | `docs/CONFIGURATION.md`      | Variabili d'ambiente, segreti e binding localhost     |
+| `docs/DEVELOPMENT.md`        | Tooling di sviluppo (Makefile in Docker) e convenzioni |
 | `docs/VALIDATION.md`         | Procedure di test e validazione                       |
 | `PROJECT_STATUS.md`          | Stato corrente, decisioni e funzionalità implementate |
 

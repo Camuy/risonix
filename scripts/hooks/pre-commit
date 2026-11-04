@@ -1,0 +1,20 @@
+#!/bin/sh
+# Hook pre-commit di Risonix (P0-08).
+#
+# Esegue lint e typecheck interamente in Docker tramite il Makefile, così non
+# serve alcuna installazione nativa. Installazione: `make hooks`.
+#
+# Per saltare l'hook in un commit specifico: `git commit --no-verify`.
+
+set -e
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "[pre-commit] Docker non trovato: salto i controlli." >&2
+    exit 0
+fi
+
+echo "[pre-commit] make lint"
+make lint
+
+echo "[pre-commit] make typecheck"
+make typecheck

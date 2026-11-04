@@ -30,12 +30,14 @@ fase.
 - Dati locali e PHI **non** versionati; pesi dei modelli **non** versionati.
 - Configurazione d'ambiente documentata (`.env.example` + `docs/CONFIGURATION.md`),
   validazione fail-fast e servizi solo su localhost — issue P0-10.
+- Tooling di sviluppo in Docker (`Makefile`: lint/format/typecheck/test, hook
+  pre-commit), documentato in `docs/DEVELOPMENT.md` — issue P0-08.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
-| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64, Compose e container frontend/backend/AI/Orthanc fatti; tooling e CI da fare |
+| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config e tooling fatti; CI da fare |
 | Phase 1 — DICOM Foundation | ⬜ | |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
@@ -62,6 +64,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
 | F10 | `compose.yaml`: profili, limiti risorse, volumi, healthcheck, shutdown | ✅ | P0-03 |
 | F11 | Orthanc opzionale (profilo `dicom`), storage persistente, DICOMweb | ✅ | P0-07 |
+| F12 | Tooling di sviluppo in Docker (Makefile: lint/format/typecheck/test/hooks) | ✅ | P0-08 |
 
 ---
 
@@ -103,8 +106,7 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. P0-08 — tooling di sviluppo in Docker.
-2. P0-09 — CI GitHub Actions.
+1. P0-09 — CI GitHub Actions.
 
 ---
 
