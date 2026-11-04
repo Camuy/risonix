@@ -2,7 +2,7 @@
 
 | Campo        | Valore                                                       |
 | ------------ | ------------------------------------------------------------ |
-| Versione     | 1.0 (bozza iniziale, *Phase 0*)                              |
+| Versione     | 1.1 (Phase 0)                                                |
 | Stato        | Pre-alpha — documento vivo                                   |
 | Owner        | Camuy                                                        |
 | Ultima modifica | 2026-11-04                                                |
@@ -501,7 +501,7 @@ La release 1.0 richiede inoltre il soddisfacimento esplicito della checklist DoD
 
 | # | Tema | Stato | Note |
 | - | ---- | ----- | ---- |
-| R1 | Compatibilità ARM64 delle dipendenze (PyTorch, MONAI, SimpleITK) | Aperto | Da validare e pinnare (P0-02) |
+| R1 | Compatibilità ARM64 delle dipendenze (PyTorch, MONAI, SimpleITK) | **Chiuso** (P0-02) | Versioni validate e pinnate in `docs/DEPENDENCIES.md` |
 | R2 | Memoria limitata (16 GB) con AI attiva | Aperto | Limiti per container + pipeline memory-aware |
 | R3 | Performance rendering 3D su CPU | Aperto | Benchmark Fase 7 |
 | R4 | Licenza del progetto | Aperto | Da definire in Fase 0 insieme alle licenze dipendenze |
@@ -515,6 +515,7 @@ La release 1.0 richiede inoltre il soddisfacimento esplicito della checklist DoD
 | Versione | Data       | Modifica |
 | -------- | ---------- | -------- |
 | 1.0      | 2026-11-04 | Prima bozza completa dello scheletro e dei requisiti (Phase 0, P0-01) |
+| 1.1      | 2026-11-04 | Matrice di compatibilità ARM64 e pinning dipendenze; R1 chiuso (P0-02) |
 
 ---
 
