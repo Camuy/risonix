@@ -6,6 +6,7 @@
 > **Non è un dispositivo medico** e non fornisce diagnosi cliniche validate.
 
 [![Status](https://img.shields.io/badge/status-pre--alpha-inactive)](#stato-del-progetto)
+[![CI](https://github.com/Camuy/risonix/actions/workflows/ci.yml/badge.svg)](https://github.com/Camuy/risonix/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue)](#requisiti)
 [![Docker](https://img.shields.io/badge/runtime-Docker-2496ED?logo=docker&logoColor=white)](#quickstart)
 [![License](https://img.shields.io/badge/license-TBD-lightgrey)](docs/DEPENDENCIES.md)
@@ -37,9 +38,9 @@ La specifica tecnica completa è in [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICA
 
 ## Stato del progetto
 
-**Pre-alpha** — l'ambiente Docker è in costruzione (*Phase 0*). Sono già
-disponibili i container di frontend, backend e AI; Orthanc, tooling e CI sono in
-lavorazione.
+**Pre-alpha** — l'ambiente *Phase 0* è completo: container di frontend, backend
+e AI, Orthanc opzionale, configurazione/segreti, tooling in Docker e CI. Prossimo
+passo: *Phase 1 — Fondamenta DICOM*.
 
 - Stato corrente, decisioni e funzionalità: [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 - Pianificazione incrementale: [`docs/ROADMAP.md`](docs/ROADMAP.md)

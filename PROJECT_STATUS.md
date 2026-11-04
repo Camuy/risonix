@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato complessivo | **Pre-alpha** — Fase 0 in corso |
+| Stato complessivo | **Pre-alpha** — Fase 0 completata, Fase 1 in avvio |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
@@ -32,12 +32,14 @@ fase.
   validazione fail-fast e servizi solo su localhost — issue P0-10.
 - Tooling di sviluppo in Docker (`Makefile`: lint/format/typecheck/test, hook
   pre-commit), documentato in `docs/DEVELOPMENT.md` — issue P0-08.
+- CI GitHub Actions (`.github/workflows/ci.yml`): qualità, validazione Compose,
+  scansione segreti e build immagini `linux/arm64` — issue P0-09.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
-| Phase 0 — Environment & Architecture | 🚧 | Scaffolding, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config e tooling fatti; CI da fare |
+| Phase 0 — Environment & Architecture | ✅ | Repo, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config, tooling e CI |
 | Phase 1 — DICOM Foundation | ⬜ | |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
@@ -59,7 +61,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F4 | `.gitignore` esteso: struttura dati tracciata, PHI/pesi mai versionati | ✅ | P0-01 |
 | F5 | Link del README ai documenti di progetto | ✅ | P0-01 |
 | F6 | Container frontend/backend/AI + Compose | ✅ | P0-03…P0-06 |
-| F7 | CI GitHub Actions | ⬜ | P0-09 |
+| F7 | CI GitHub Actions | ✅ | P0-09 |
 | F8 | `.env.example` e gestione segreti | ✅ | P0-10 |
 | F9 | Matrice di compatibilità ARM64 e versioni pinnate | ✅ | P0-02 |
 | F10 | `compose.yaml`: profili, limiti risorse, volumi, healthcheck, shutdown | ✅ | P0-03 |
@@ -106,7 +108,8 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. P0-09 — CI GitHub Actions.
+1. Avviare la **Phase 1 — Fondamenta DICOM** (import e indicizzazione dataset).
+2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5).
 
 ---
 

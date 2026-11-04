@@ -82,8 +82,25 @@ Per saltarlo: `git commit --no-verify`.
 
 ---
 
-## 5. Riutilizzo in CI
+## 5. Integrazione continua (CI)
 
-La pipeline GitHub Actions (P0-09) riutilizza **gli stessi comandi** (`make
-lint`, `make typecheck`, `make test`, `make config`), così il comportamento in CI
-coincide con quello locale. Vedi [`docs/VALIDATION.md`](VALIDATION.md) §6.
+Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (issue
+P0-09), eseguito su push verso `master` e sulle pull request. La CI riutilizza
+**gli stessi comandi** del Makefile, così il comportamento in CI coincide con
+quello locale.
+
+| Job | Cosa fa |
+| --- | ------- |
+| `quality` | `make lint`, `make typecheck`, `make test` |
+| `compose-and-secrets` | `docker compose config -q` (base + tools), assenza di tag `latest`, `scripts/ci/check-no-secrets.sh` |
+| `build-arm64` | build delle immagini `linux/arm64` (frontend `prod`, api `runtime`, ai `runtime`) |
+
+Note:
+
+- **QEMU** è usato **solo** per costruire le immagini `arm64`, mai per il runtime.
+- Le immagini sono costruite con `docker/build-push-action` e **cache** su GitHub
+  Actions (`type=gha`).
+- **Tempi di build**: da misurare al primo run su `master`; aggiornare qui i
+  valori osservati (runner x86 con emulazione `arm64`).
+- Nessun segreto deve comparire nei log; la scansione è parte del job
+  `compose-and-secrets`.
