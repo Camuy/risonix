@@ -100,6 +100,18 @@ non sono importati all'avvio, il footprint a riposo coincide con la baseline
 Python/FastAPI; il picco si misura solo al caricamento di un modello (Fase 5).
 Valore da riconfermare con `docker stats` al primo build ARM64 dell'immagine.
 
+### 4.3 Verifica del servizio Orthanc (P0-07)
+
+| Verifica | Comando / criterio |
+| -------- | ------------------ |
+| Avvio opzionale | `docker compose --profile dicom up -d orthanc` → HTTP su `127.0.0.1:8042` |
+| Non di default | `docker compose config --services` (profilo `default`) **non** include `orthanc` |
+| Health | `curl -fsS -u orthanc:orthanc http://localhost:8042/system` risponde `200` |
+| Autenticazione | la stessa richiesta **senza** credenziali risponde `401` |
+| DICOMweb | `GET /dicom-web/studies` risponde in JSON (`Accept: application/dicom+json`) |
+| Persistenza | uno studio importato resta leggibile dopo `docker compose restart orthanc` |
+| Config locale | `orthanc.json` montato in sola lettura; gli override `ORTHANC__*` hanno precedenza |
+
 ---
 
 ## 5. Budget di performance e misure
