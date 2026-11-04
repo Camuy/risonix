@@ -76,10 +76,10 @@ api-format:
 	$(TOOLS) run --rm --build api-tools ruff format .
 
 api-typecheck:
-	$(TOOLS) run --rm --build api-tools mypy app tests
+	$(TOOLS) run --rm --build api-tools mypy --cache-dir /tmp/mypy-cache app tests
 
 api-test:
-	$(TOOLS) run --rm --build api-tools python -m pytest
+	$(TOOLS) run --rm --build api-tools python -m pytest -p no:cacheprovider
 
 # ---------------------------------------------------------------------------
 # Servizio AI (PyTorch + MONAI)
@@ -92,10 +92,10 @@ ai-format:
 	$(TOOLS) run --rm --build ai-tools ruff format .
 
 ai-typecheck:
-	$(TOOLS) run --rm --build ai-tools mypy app tests
+	$(TOOLS) run --rm --build ai-tools mypy --cache-dir /tmp/mypy-cache app tests
 
 ai-test:
-	$(TOOLS) run --rm --build ai-tools python -m pytest
+	$(TOOLS) run --rm --build ai-tools python -m pytest -p no:cacheprovider
 
 # ---------------------------------------------------------------------------
 # Hook pre-commit (in Docker, nessuna dipendenza nativa)
