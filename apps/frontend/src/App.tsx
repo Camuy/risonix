@@ -1,42 +1,105 @@
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import type { SeriesSummary } from './api/client';
+import type { SeriesSelection } from './api/stack';
 import { IconButton } from './components/Button';
 import { Panel } from './components/Panel';
 import { Resizer } from './components/Resizer';
+import { SeriesExplorer } from './components/SeriesExplorer';
 import { StateMessage } from './components/StateMessage';
 import { StatusBar } from './components/StatusBar';
 import { Toolbar } from './components/Toolbar';
-import { Viewport } from './components/Viewport';
+import {
+  activateTool,
+  deleteSelectedAnnotations,
+  fitViewports,
+  getSelectedAnnotationLabel,
+  isViewportInverted,
+  resetViewports,
+  rotateViewport,
+  setCrosshairSize as applyCrosshairSize,
+  setMeasurementColor as applyMeasurementColor,
+  setSelectedAnnotationLabel,
+  toggleViewportInvert,
+} from './cornerstone/engineBridge';
+import type { CrosshairSize, ViewportTool } from './cornerstone/engine';
+import { SLICE_CHANGE_EVENT, type SliceChangeDetail } from './cornerstone/events';
+import { useAnnotationSelection } from './hooks/useAnnotationSelection';
 import { useApiStatus, type ApiStatus } from './hooks/useApiStatus';
 import { useFullscreen } from './hooks/useFullscreen';
 import { PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, useResizablePanels } from './hooks/useResizablePanels';
+import { categoryOf, useSeriesCategories, type SeriesCategoryId } from './hooks/useSeriesCategories';
+import { useStudyCatalog } from './hooks/useStudyCatalog';
+import { useViewportLayout } from './hooks/useViewportLayout';
 
-function StudiesContent({ status }: { status: ApiStatus }) {
-  if (status.state === 'checking') {
-    return <StateMessage compact variant="loading" title="Caricamento studi…" />;
-  }
-  if (status.state === 'down') {
-    return (
-      <StateMessage
-        compact
-        variant="error"
-        title="API offline"
-        description="Impossibile elencare gli studi finché il servizio non è raggiungibile."
-      />
-    );
-  }
+/** La griglia trascina Cornerstone3D: caricata solo quando serve (P2-08). */
+const ViewportGrid = lazy(() =>
+  import('./components/ViewportGrid').then((module) => ({ default: module.ViewportGrid })),
+);
+
+function seriesPlane(description: string | null): 'axial' | 'coronal' | 'sagittal' | 'other' {
+  const value = (description ?? '').toLowerCase();
+  if (value.includes('localizer')) return 'other';
+  if (value.includes('cor')) return 'coronal';
+  if (value.includes('sag')) return 'sagittal';
+  if (value.includes('tra') || value.includes('ax')) return 'axial';
+  return 'other';
+}
+
+function formatSpacing(value: number[] | null): string {
+  if (!value || value.length === 0) return '—';
+  return `${value.map((item) => item.toFixed(2)).join(' × ')} mm`;
+}
+
+function SeriesProperties({ selection }: { selection: SeriesSelection }) {
+  const { series } = selection;
+  const rows: Array<[string, string]> = [
+    ['Modalità', series.modality ?? '—'],
+    ['Descrizione', series.description ?? '—'],
+    ['Numero serie', series.series_number !== null ? String(series.series_number) : '—'],
+    ['Istanze', String(series.instance_count)],
+    ['Matrice', series.columns && series.rows ? `${series.columns} × ${series.rows}` : '—'],
+    ['Pixel spacing', formatSpacing(series.pixel_spacing)],
+    ['Slice spacing', series.slice_spacing ? `${series.slice_spacing.toFixed(2)} mm` : '—'],
+    ['Geometria', series.irregular ? 'Irregolare' : 'Regolare'],
+  ];
+
   return (
-    <StateMessage
-      compact
-      variant="empty"
-      title="Nessuno studio importato"
-      description="Gli studi importati compariranno qui, ordinati per data."
-    />
+    <dl className="properties">
+      {rows.map(([label, value]) => (
+        <div key={label} className="properties__row">
+          <dt className="properties__label">{label}</dt>
+          <dd className="properties__value">{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
-function PropertiesContent({ status }: { status: ApiStatus }) {
-  if (status.state === 'up') {
+interface SliceInfo {
+  index: number;
+  total: number;
+}
+
+function PropertiesContent({
+  status,
+  selection,
+  slice,
+}: {
+  status: ApiStatus;
+  selection: SeriesSelection | null;
+  slice: SliceInfo | null;
+}) {
+  if (status.state !== 'up') {
+    return (
+      <StateMessage
+        compact
+        variant={status.state === 'down' ? 'error' : 'loading'}
+        title={status.state === 'down' ? 'API offline' : 'In attesa dei dati…'}
+      />
+    );
+  }
+  if (!selection) {
     return (
       <StateMessage
         compact
@@ -47,21 +110,215 @@ function PropertiesContent({ status }: { status: ApiStatus }) {
     );
   }
   return (
-    <StateMessage
-      compact
-      variant={status.state === 'down' ? 'error' : 'loading'}
-      title={status.state === 'down' ? 'API offline' : 'In attesa dei dati…'}
-    />
+    <div className="panel__stack">
+      <SeriesProperties selection={selection} />
+      {slice ? (
+        <div className="properties__row">
+          <dt className="properties__label">Slice corrente</dt>
+          <dd className="properties__value">
+            {Math.min(slice.index, slice.total - 1) + 1} / {slice.total}
+          </dd>
+        </div>
+      ) : null}
+      <SegmentationPlaceholder />
+    </div>
   );
+}
+
+/** Sezione predisposta per la segmentazione (Fase 4) — P2-07. */
+function SegmentationPlaceholder() {
+  return (
+    <section className="panel-section" aria-label="Segmentazione">
+      <h3 className="panel-section__title">Segmentazione</h3>
+      <p className="panel-section__text text-faint">
+        Gli strumenti di segmentazione manuale e AI saranno disponibili nella Fase 4.
+      </p>
+    </section>
+  );
+}
+
+const DEFAULT_MEASUREMENT_COLOR = '#ffff00';
+const NARROW_QUERY = '(max-width: 900px)';
+
+function panelsOpenByDefault(): boolean {
+  return typeof window === 'undefined' || !window.matchMedia(NARROW_QUERY).matches;
 }
 
 export default function App() {
   const shellRef = useRef<HTMLDivElement>(null);
   const { status, refresh } = useApiStatus();
+  const { state: catalog, reload: reloadCatalog } = useStudyCatalog(status);
+  const { categoryFor, isOverridden, setCategory } = useSeriesCategories();
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(shellRef);
   const { leftWidth, rightWidth, setLeftWidth, setRightWidth } = useResizablePanels();
-  const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
+  const { layout, setLayout, capacity } = useViewportLayout();
+  const [leftOpen, setLeftOpen] = useState(panelsOpenByDefault);
+  const [rightOpen, setRightOpen] = useState(panelsOpenByDefault);
+  const [assignments, setAssignments] = useState<(SeriesSelection | null)[]>([null]);
+  const [activeSlot, setActiveSlot] = useState(0);
+  const [activeTool, setActiveTool] = useState<ViewportTool>('reference');
+  const [crosshairSize, setCrosshairSize] = useState<CrosshairSize>('medium');
+  const [measurementColor, setMeasurementColor] = useState(DEFAULT_MEASUREMENT_COLOR);
+  const [inverted, setInverted] = useState(false);
+  const [sliceInfo, setSliceInfo] = useState<Record<string, SliceInfo>>({});
+  const selectedCount = useAnnotationSelection();
+
+  const activeViewportId = `risonix-viewport-${activeSlot}`;
+
+  useEffect(() => {
+    void applyMeasurementColor(DEFAULT_MEASUREMENT_COLOR);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<SliceChangeDetail>).detail;
+      if (!detail) return;
+      setSliceInfo((current) => ({
+        ...current,
+        [detail.viewportId]: { index: detail.index, total: detail.total },
+      }));
+    };
+    window.addEventListener(SLICE_CHANGE_EVENT, handler);
+    return () => window.removeEventListener(SLICE_CHANGE_EVENT, handler);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void isViewportInverted(activeViewportId).then((value) => {
+      if (!cancelled) setInverted(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeViewportId, assignments]);
+
+  const renderable = useMemo(() => {
+    if (catalog.state !== 'ready') return [];
+    return catalog.studies.flatMap((study) =>
+      study.series
+        .filter((series) => categoryOf(categoryFor(series)).renderable)
+        .map((series) => ({ study, series })),
+    );
+  }, [catalog, categoryFor]);
+
+  /**
+   * Ordine di riempimento automatico: prima le serie diagnostiche, una per
+   * piano (assiale/coronale/sagittale), poi le altre. Senza questo le localizer
+   * (poche fette e orientamenti misti) finivano nelle pane da sincronizzare.
+   */
+  const autoOrder = useMemo(() => {
+    const ranked = [...renderable].sort(
+      (first, second) => second.series.instance_count - first.series.instance_count,
+    );
+    const result: typeof renderable = [];
+    const usedPlanes = new Set<string>();
+    for (const item of ranked) {
+      const plane = seriesPlane(item.series.description);
+      if (plane !== 'other' && !usedPlanes.has(plane)) {
+        result.push(item);
+        usedPlanes.add(plane);
+      }
+    }
+    for (const item of ranked) {
+      if (!result.some((entry) => entry.series.id === item.series.id)) result.push(item);
+    }
+    return result;
+  }, [renderable]);
+
+  useEffect(() => {
+    setAssignments((current) => {
+      const next = current.slice(0, capacity);
+      while (next.length < capacity) next.push(null);
+
+      const valid = (selection: SeriesSelection | null) =>
+        selection !== null && autoOrder.some((item) => item.series.id === selection.series.id);
+      for (let slot = 0; slot < capacity; slot += 1) {
+        if (next[slot] && !valid(next[slot])) next[slot] = null;
+      }
+
+      const used = new Set(next.filter(valid).map((item) => item!.series.id));
+      for (let slot = 0; slot < capacity; slot += 1) {
+        if (next[slot] === null) {
+          const candidate = autoOrder.find((item) => !used.has(item.series.id));
+          if (candidate) {
+            next[slot] = candidate;
+            used.add(candidate.series.id);
+          }
+        }
+      }
+      return next;
+    });
+    setActiveSlot((current) => Math.min(current, capacity - 1));
+  }, [capacity, autoOrder]);
+
+  useEffect(() => {
+    void activateTool(activeTool);
+  }, [activeTool]);
+
+  const assignActive = useCallback(
+    (selection: SeriesSelection) => {
+      setAssignments((current) => {
+        const next = [...current];
+        while (next.length < capacity) next.push(null);
+        next[activeSlot] = selection;
+        return next.slice(0, capacity);
+      });
+    },
+    [activeSlot, capacity],
+  );
+
+  const refreshAll = useCallback(() => {
+    void refresh();
+    reloadCatalog();
+  }, [refresh, reloadCatalog]);
+
+  const changeCrosshairSize = useCallback((size: CrosshairSize) => {
+    setCrosshairSize(size);
+    void applyCrosshairSize(size);
+  }, []);
+
+  const changeMeasurementColor = useCallback((color: string) => {
+    setMeasurementColor(color);
+    void applyMeasurementColor(color);
+  }, []);
+
+  const deleteSelected = useCallback(() => {
+    void deleteSelectedAnnotations();
+  }, []);
+
+  const editNote = useCallback(() => {
+    void getSelectedAnnotationLabel().then((current) => {
+      const next = window.prompt('Nota per la misura selezionata:', current);
+      if (next === null) return;
+      void setSelectedAnnotationLabel(next);
+    });
+  }, []);
+
+  const rotateActive = useCallback(() => {
+    void rotateViewport(activeViewportId, 90);
+  }, [activeViewportId]);
+
+  const toggleInvertActive = useCallback(() => {
+    void toggleViewportInvert(activeViewportId).then(setInverted);
+  }, [activeViewportId]);
+
+  const resetView = useCallback(() => {
+    void resetViewports();
+    setInverted(false);
+  }, []);
+
+  const fitView = useCallback(() => {
+    void fitViewports();
+  }, []);
+
+  const changeCategory = useCallback(
+    (series: SeriesSummary, category: SeriesCategoryId | null) => {
+      setCategory(series.series_instance_uid, category);
+    },
+    [setCategory],
+  );
+
+  const activeSelection = assignments[activeSlot] ?? null;
 
   return (
     <div className="app-shell" ref={shellRef}>
@@ -69,9 +326,25 @@ export default function App() {
         leftOpen={leftOpen}
         rightOpen={rightOpen}
         isFullscreen={isFullscreen}
+        layout={layout}
+        activeTool={activeTool}
+        crosshairSize={crosshairSize}
+        measurementColor={measurementColor}
+        selectedCount={selectedCount}
+        inverted={inverted}
         onToggleLeft={() => setLeftOpen((open) => !open)}
         onToggleRight={() => setRightOpen((open) => !open)}
         onToggleFullscreen={toggleFullscreen}
+        onLayoutChange={setLayout}
+        onToolChange={setActiveTool}
+        onCrosshairSizeChange={changeCrosshairSize}
+        onMeasurementColorChange={changeMeasurementColor}
+        onDeleteSelected={deleteSelected}
+        onEditNote={editNote}
+        onRotate={rotateActive}
+        onToggleInvert={toggleInvertActive}
+        onResetView={resetView}
+        onFitView={fitView}
       />
 
       <div className="app-body">
@@ -80,9 +353,18 @@ export default function App() {
             side="left"
             width={leftWidth}
             title="Studi"
-            actions={<IconButton label="Aggiorna elenco studi" icon="refresh" onClick={refresh} />}
+            actions={<IconButton label="Aggiorna elenco studi" icon="refresh" onClick={refreshAll} />}
           >
-            <StudiesContent status={status} />
+            <SeriesExplorer
+              status={status}
+              catalog={catalog}
+              selectedSeriesId={activeSelection?.series.id ?? null}
+              categoryFor={categoryFor}
+              isOverridden={isOverridden}
+              onCategoryChange={changeCategory}
+              onSelect={assignActive}
+              onReload={reloadCatalog}
+            />
           </Panel>
         ) : null}
 
@@ -97,7 +379,16 @@ export default function App() {
           />
         ) : null}
 
-        <Viewport status={status} onRetry={refresh} />
+        <Suspense fallback={<div className="viewport-grid" aria-hidden="true" />}>
+          <ViewportGrid
+            layout={layout}
+            status={status}
+            assignments={assignments}
+            activeSlot={activeSlot}
+            onActivate={setActiveSlot}
+            onRetry={refresh}
+          />
+        </Suspense>
 
         {rightOpen ? (
           <Resizer
@@ -112,7 +403,11 @@ export default function App() {
 
         {rightOpen ? (
           <Panel side="right" width={rightWidth} title="Proprietà">
-            <PropertiesContent status={status} />
+            <PropertiesContent
+              status={status}
+              selection={activeSelection}
+              slice={sliceInfo[activeViewportId] ?? null}
+            />
           </Panel>
         ) : null}
       </div>
