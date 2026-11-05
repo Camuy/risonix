@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from typing import Any, cast
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .core.config import Settings, get_settings
@@ -70,6 +71,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
+
+    if settings.cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origins,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
     app.include_router(health.router)
     app.include_router(version.router, prefix="/api")
     app.include_router(studies.router)

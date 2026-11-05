@@ -42,6 +42,7 @@ d'ambiente e **come si gestiscono i segreti**. Il modello di minaccia assume
 | `MRI_ORTHANC_DICOM_PORT` | `4242` | Compose | Porta host DICOM di Orthanc. |
 | `MRI_PROXY_PORT` | `80` | Compose | Porta host del reverse proxy (profilo `prod`). |
 | `MRI_API_PUBLIC_URL` | `http://localhost:8000` | Frontend | URL dell'API visto dal browser. |
+| `MRI_CORS_ORIGINS` | `["http://localhost:5173","http://127.0.0.1:5173"]` | API | Origin browser ammessi (JSON); in prod same-origin via Nginx, lista vuota. |
 | `MRI_ORTHANC_USER` | `orthanc` | Orthanc | Utente HTTP (segreto, vedi §4). |
 | `MRI_ORTHANC_PASSWORD` | `orthanc` | Orthanc | Password HTTP (segreto, vedi §4). |
 

@@ -339,7 +339,12 @@ def scan_zip(archive: Path, extract_to: Path) -> ScanReport:
 
 
 def scan_path(root: Path, *, extract_to: Path | None = None) -> ScanReport:
-    """Dispatch: directory, archivio ZIP o singolo file DICOM."""
+    """Dispatch: directory, archivio ZIP, file DICOM o file DICOMDIR.
+
+    Un percorso che punta direttamente a un file ``DICOMDIR`` viene trattato
+    come una scansione della directory che lo contiene, seguendone i record
+    ``IMAGE`` (P1-01): è il formato più comune sui supporti CD/DVD clinici.
+    """
     root = Path(root)
     if root.is_dir():
         return scan_directory(root)
@@ -348,6 +353,14 @@ def scan_path(root: Path, *, extract_to: Path | None = None) -> ScanReport:
             raise ValueError("per scansionare un archivio ZIP serve una directory di staging")
         return scan_zip(root, extract_to)
     if root.is_file():
+        if is_dicomdir_file(root):
+            report = scan_directory(root.parent)
+            report.root = str(root.resolve())
+            report.kind = "dicomdir"
+            report.notes.append(
+                "percorso DICOMDIR: seguiti i riferimenti sui file e scansionata la directory"
+            )
+            return report
         report = ScanReport(root=str(root.resolve()), kind="file")
         instance, kind = classify_file(root)
         if instance is not None and kind == "dicom":

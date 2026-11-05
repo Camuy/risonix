@@ -29,7 +29,7 @@ x-logging: &logging
 services:
   # ---------------------------------------------------------------------------
   # Frontend (dev) — React + TypeScript + Vite, hot reload, porta 5173
-  # Limite: 256 MB / 0.5 CPU
+  # Limite: 1 GB / 0.5 CPU (il pre-bundle Vite di Cornerstone3D/VTK.js non sta in 256 MB)
   # ---------------------------------------------------------------------------
   mri-frontend:
     profiles: ["default", "full"]
@@ -66,7 +66,7 @@ services:
       resources:
         limits:
           cpus: "0.50"
-          memory: "256M"
+          memory: "1024M"
     networks: [mri-net]
 
   # ---------------------------------------------------------------------------
@@ -81,6 +81,8 @@ services:
       dockerfile: ../../infrastructure/docker/api/Dockerfile
     ports:
       - "${MRI_BIND_ADDR:-127.0.0.1}:${MRI_API_PORT:-8000}:8000"
+    env_file:
+      - .env
     environment:
       MRI_ENV: ${MRI_ENV:-development}
       MRI_DATA_DIR: /data

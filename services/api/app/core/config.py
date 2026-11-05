@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     deidentify_salt: str = "risonix"
     deidentify_remap_uids: bool = False
 
+    #: Origin di sviluppo ammessi dal browser (in prod il frontend è same-origin
+    #: via Nginx e la lista può restare vuota). Vedi ``docs/CONFIGURATION.md``.
+    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
     @field_validator("log_level")
     @classmethod
     def _validate_log_level(cls, value: str) -> str:
