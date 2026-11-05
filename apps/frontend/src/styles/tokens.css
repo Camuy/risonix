@@ -1,0 +1,90 @@
+/* Design tokens — Risonix MRI Explorer (P2-01).
+   Fonte di verità visiva: vedi DESIGN.md. Tutto in OKLCH. */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Superfici e inchiostro (neutri freddi, chroma minima) --- */
+  --color-bg-inset: oklch(0.115 0.01 255);
+  --color-bg-base: oklch(0.145 0.01 255);
+  --color-bg-surface: oklch(0.185 0.012 255);
+  --color-bg-raised: oklch(0.225 0.014 255);
+  --color-bg-overlay: oklch(0.255 0.016 255);
+  --color-border: oklch(0.3 0.014 255);
+  --color-border-strong: oklch(0.4 0.016 255);
+
+  --color-text: oklch(0.94 0.006 255);
+  --color-text-muted: oklch(0.74 0.01 255);
+  --color-text-faint: oklch(0.6 0.012 255);
+
+  /* --- Accento clinico --- */
+  --color-accent: oklch(0.72 0.13 215);
+  --color-accent-hover: oklch(0.78 0.13 215);
+  --color-accent-active: oklch(0.66 0.13 215);
+  --color-accent-contrast: oklch(0.15 0.02 215);
+
+  /* --- Stato --- */
+  --color-success: oklch(0.75 0.15 155);
+  --color-warning: oklch(0.82 0.14 85);
+  --color-danger: oklch(0.7 0.19 25);
+  --color-info: var(--color-accent);
+
+  /* --- Tipografia --- */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'SFMono-Regular', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* --- Spaziatura (scala 4px) --- */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 24px;
+  --space-8: 32px;
+
+  /* --- Raggi --- */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-pill: 999px;
+
+  /* --- Dimensioni layout --- */
+  --toolbar-height: 44px;
+  --statusbar-height: 26px;
+  --panel-width-min: 200px;
+  --panel-width-max: 520px;
+  --resizer-size: 5px;
+
+  /* --- z-index semantico --- */
+  --z-panel: 10;
+  --z-dropdown: 100;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  /* --- Movimento --- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+
+  /* --- Ombre (uso parsimonioso, mai con bordo sottile + blur ampio) --- */
+  --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.45);
+}

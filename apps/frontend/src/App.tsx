@@ -1,82 +1,123 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 
-type ServiceState = 'checking' | 'up' | 'down';
+import { IconButton } from './components/Button';
+import { Panel } from './components/Panel';
+import { Resizer } from './components/Resizer';
+import { StateMessage } from './components/StateMessage';
+import { StatusBar } from './components/StatusBar';
+import { Toolbar } from './components/Toolbar';
+import { Viewport } from './components/Viewport';
+import { useApiStatus, type ApiStatus } from './hooks/useApiStatus';
+import { useFullscreen } from './hooks/useFullscreen';
+import { PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, useResizablePanels } from './hooks/useResizablePanels';
 
-interface ServiceStatus {
-  name: string;
-  url: string;
-  state: ServiceState;
-  detail?: string;
+function StudiesContent({ status }: { status: ApiStatus }) {
+  if (status.state === 'checking') {
+    return <StateMessage compact variant="loading" title="Caricamento studi…" />;
+  }
+  if (status.state === 'down') {
+    return (
+      <StateMessage
+        compact
+        variant="error"
+        title="API offline"
+        description="Impossibile elencare gli studi finché il servizio non è raggiungibile."
+      />
+    );
+  }
+  return (
+    <StateMessage
+      compact
+      variant="empty"
+      title="Nessuno studio importato"
+      description="Gli studi importati compariranno qui, ordinati per data."
+    />
+  );
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
-
-async function fetchApiStatus(signal: AbortSignal): Promise<ServiceStatus> {
-  const base: ServiceStatus = { name: 'mri-api', url: API_BASE_URL, state: 'checking' };
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/version`, { signal });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const data = (await response.json()) as { version?: string };
-    return { ...base, state: 'up', detail: data.version };
-  } catch {
-    return { ...base, state: 'down' };
+function PropertiesContent({ status }: { status: ApiStatus }) {
+  if (status.state === 'up') {
+    return (
+      <StateMessage
+        compact
+        variant="empty"
+        title="Nessuna serie selezionata"
+        description="Seleziona una serie per consultarne metadati e parametri geometrici."
+      />
+    );
   }
+  return (
+    <StateMessage
+      compact
+      variant={status.state === 'down' ? 'error' : 'loading'}
+      title={status.state === 'down' ? 'API offline' : 'In attesa dei dati…'}
+    />
+  );
 }
 
 export default function App() {
-  const [api, setApi] = useState<ServiceStatus>({
-    name: 'mri-api',
-    url: API_BASE_URL,
-    state: 'checking',
-  });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-
-    void fetchApiStatus(controller.signal).then((status) => setApi(status));
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, []);
-
-  const stateLabel: Record<ServiceState, string> = {
-    checking: 'verifica…',
-    up: 'operativo',
-    down: 'non raggiungibile',
-  };
+  const shellRef = useRef<HTMLDivElement>(null);
+  const { status, refresh } = useApiStatus();
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(shellRef);
+  const { leftWidth, rightWidth, setLeftWidth, setRightWidth } = useResizablePanels();
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
 
   return (
-    <main className="shell">
-      <header className="masthead">
-        <h1>Risonix</h1>
-        <p className="subtitle">MRI Explorer — ambiente Docker (Phase 0)</p>
-      </header>
+    <div className="app-shell" ref={shellRef}>
+      <Toolbar
+        leftOpen={leftOpen}
+        rightOpen={rightOpen}
+        isFullscreen={isFullscreen}
+        onToggleLeft={() => setLeftOpen((open) => !open)}
+        onToggleRight={() => setRightOpen((open) => !open)}
+        onToggleFullscreen={toggleFullscreen}
+      />
 
-      <section className="card" aria-live="polite">
-        <h2>Stato dei servizi</h2>
-        <ul className="services">
-          <li>
-            <span className="dot" data-state={api.state} aria-hidden="true" />
-            <span className="service-name">{api.name}</span>
-            <span className="service-url">{api.url}</span>
-            <span className="service-state">{stateLabel[api.state]}</span>
-            {api.detail ? <span className="service-detail">v{api.detail}</span> : null}
-          </li>
-        </ul>
-        <p className="hint">
-          Il frontend è attivo. L&apos;API compare come operativa quando il container{' '}
-          <code>mri-api</code> è avviato.
-        </p>
-      </section>
+      <div className="app-body">
+        {leftOpen ? (
+          <Panel
+            side="left"
+            width={leftWidth}
+            title="Studi"
+            actions={<IconButton label="Aggiorna elenco studi" icon="refresh" onClick={refresh} />}
+          >
+            <StudiesContent status={status} />
+          </Panel>
+        ) : null}
 
-      <footer className="footer">
-        UI di placeholder — il viewer DICOM (Cornerstone3D) arriverà nella Fase 2.
-      </footer>
-    </main>
+        {leftOpen ? (
+          <Resizer
+            side="left"
+            value={leftWidth}
+            min={PANEL_WIDTH_MIN}
+            max={PANEL_WIDTH_MAX}
+            onChange={setLeftWidth}
+            label="Ridimensiona pannello studi"
+          />
+        ) : null}
+
+        <Viewport status={status} onRetry={refresh} />
+
+        {rightOpen ? (
+          <Resizer
+            side="right"
+            value={rightWidth}
+            min={PANEL_WIDTH_MIN}
+            max={PANEL_WIDTH_MAX}
+            onChange={setRightWidth}
+            label="Ridimensiona pannello proprietà"
+          />
+        ) : null}
+
+        {rightOpen ? (
+          <Panel side="right" width={rightWidth} title="Proprietà">
+            <PropertiesContent status={status} />
+          </Panel>
+        ) : null}
+      </div>
+
+      <StatusBar status={status} />
+    </div>
   );
 }

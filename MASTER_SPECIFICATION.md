@@ -493,6 +493,8 @@ La release 1.0 richiede inoltre il soddisfacimento esplicito della checklist DoD
 | `docs/DEPENDENCIES.md` | Registro dipendenze, versioni, licenze |
 | `docs/VALIDATION.md` | Procedure di test e validazione |
 | `PROJECT_STATUS.md` | Stato corrente, decisioni, funzionalità implementate |
+| `PRODUCT.md` | Registro di prodotto: utenti, principi, accessibilità |
+| `DESIGN.md` | Design system della workstation: token visivi, tipografia, componenti |
 | `README.md` | Porta d'ingresso, visione e quickstart |
 
 ---

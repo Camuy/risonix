@@ -38,9 +38,9 @@ La specifica tecnica completa è in [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICA
 
 ## Stato del progetto
 
-**Pre-alpha** — l'ambiente *Phase 0* è completo: container di frontend, backend
-e AI, Orthanc opzionale, configurazione/segreti, tooling in Docker e CI. Prossimo
-passo: *Phase 1 — Fondamenta DICOM*.
+**Pre-alpha** — Fasi 0 e 1 complete: ambiente Docker riproducibile e fondamenta
+DICOM (import, geometria, volumi, API REST). In corso la *Phase 2 — DICOM
+Workstation* (app shell e design system).
 
 - Stato corrente, decisioni e funzionalità: [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 - Pianificazione incrementale: [`docs/ROADMAP.md`](docs/ROADMAP.md)
@@ -244,6 +244,8 @@ Il dettaglio operativo è tracciato nelle **issue GitHub** (milestone `Phase 0` 
 | `docs/DEVELOPMENT.md`        | Tooling di sviluppo (Makefile in Docker) e convenzioni |
 | `docs/VALIDATION.md`         | Procedure di test e validazione                       |
 | `PROJECT_STATUS.md`          | Stato corrente, decisioni e funzionalità implementate |
+| `PRODUCT.md`                 | Registro di prodotto: utenti, principi, accessibilità |
+| `DESIGN.md`                  | Design system della workstation (token visivi, tipografia, componenti) |
 
 ---
 
