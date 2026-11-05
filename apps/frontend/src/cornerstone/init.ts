@@ -2,10 +2,10 @@ import { cache, init as coreInit } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { init as toolsInit } from '@cornerstonejs/tools';
 
-/** Limite (in MB) di immagini mantenute in memoria: oltre questa soglia la
- *  cache espelle le voci meno recenti, così la memoria resta stabile su serie
- *  lunghe (P2-08). */
-const IMAGE_CACHE_MAX_MB = 768;
+/** Limite di immagini mantenute in memoria: oltre questa soglia la cache
+ *  espelle le voci meno recenti, così la memoria resta stabile su serie lunghe
+ *  (P2-08). ``cache.setMaxCacheSize`` lavora in byte. */
+const IMAGE_CACHE_MAX_BYTES = 768 * 1024 * 1024;
 
 let initialization: Promise<void> | null = null;
 
@@ -22,7 +22,7 @@ export function ensureCornerstone(): Promise<void> {
       await coreInit();
       await toolsInit();
       await dicomImageLoader.init();
-      cache.setMaxCacheSize(IMAGE_CACHE_MAX_MB);
+      cache.setMaxCacheSize(IMAGE_CACHE_MAX_BYTES);
     })().catch((error: unknown) => {
       initialization = null;
       throw error;

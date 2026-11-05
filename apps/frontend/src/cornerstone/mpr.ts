@@ -1,4 +1,4 @@
-import { Enums } from '@cornerstonejs/core';
+import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import {
   addTool,
   annotation,
@@ -124,13 +124,24 @@ export function registerMprViewportColor(viewportId: string, orientation: MprOri
   viewportColors.set(viewportId, MPR_ORIENTATION_COLOR[orientation]);
 }
 
-/** Rimuove la viewport MPR dal tool group e le sue annotazioni di crosshair. */
-export function unregisterMprViewport(viewportId: string, element: HTMLDivElement): void {
+/**
+ * Rimuove la viewport MPR dal tool group e le sue annotazioni di crosshair.
+ * La pulizia è idempotente: React può smontare l'effetto prima che l'elemento
+ * sia stato abilitato (StrictMode, cambio layout), quindi la lettura delle
+ * annotazioni avviene solo su un elemento ancora abilitato.
+ */
+export function unregisterMprViewport(viewportId: string, element: HTMLDivElement | null): void {
   viewportColors.delete(viewportId);
-  const annotations = (annotation.state.getAnnotations(CrosshairsTool.toolName, element) ??
-    []) as Array<{ annotationUID: string }>;
-  for (const item of annotations) {
-    annotation.state.removeAnnotation(item.annotationUID);
+  if (element && getEnabledElement(element)) {
+    try {
+      const annotations = (annotation.state.getAnnotations(CrosshairsTool.toolName, element) ??
+        []) as Array<{ annotationUID: string }>;
+      for (const item of annotations) {
+        annotation.state.removeAnnotation(item.annotationUID);
+      }
+    } catch {
+      /* l'elemento è già stato smontato: nessuna annotazione da ripulire */
+    }
   }
   ToolGroupManager.getToolGroup(MPR_TOOL_GROUP_ID)?.removeViewports(
     RENDERING_ENGINE_ID,

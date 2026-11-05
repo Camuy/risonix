@@ -77,11 +77,15 @@ export function MprViewport({ viewportId, orientation, volumeId }: MprViewportPr
 
     return () => {
       disposed = true;
-      if (frameOfReferenceUID) {
-        unregisterPresentationSync(frameOfReferenceUID, viewportId);
+      try {
+        if (frameOfReferenceUID) {
+          unregisterPresentationSync(frameOfReferenceUID, viewportId);
+        }
+        unregisterMprViewport(viewportId, element);
+        getRenderingEngine(RENDERING_ENGINE_ID)?.disableElement(viewportId);
+      } catch {
+        /* lo smontaggio non deve mai far crashare il guscio React */
       }
-      unregisterMprViewport(viewportId, element);
-      getRenderingEngine(RENDERING_ENGINE_ID)?.disableElement(viewportId);
     };
   }, [viewportId, orientation, volumeId]);
 

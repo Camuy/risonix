@@ -129,7 +129,14 @@ export async function addVolumeToViewports(
 ): Promise<void> {
   if (viewportIds.length === 0) return;
   const engine = await ensureEngine();
-  await addVolumesToViewports(engine, [{ volumeId }], [...viewportIds], immediateRender);
+  // `visibility: true` è obbligatorio: ``BaseVolumeViewport.addVolumes`` nasconde
+  // l'attore quando la visibilità è falsa/assente, lasciando la viewport nera.
+  await addVolumesToViewports(
+    engine,
+    [{ volumeId, visibility: true }],
+    [...viewportIds],
+    immediateRender,
+  );
 }
 
 /** Rilascia il volume della serie dalla cache (risorse GPU e pixel). */

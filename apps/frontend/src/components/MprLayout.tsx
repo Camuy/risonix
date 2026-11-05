@@ -116,12 +116,37 @@ export function MprLayout({ selection, status, onRetry }: MprLayoutProps) {
             reload();
             setVolume({ state: 'idle' });
           }}
-          anisotropic={seriesVolume?.anisotropic ?? false}
+          anisotropic={seriesVolume ? paneIsAnisotropic(seriesVolume, orientation) : false}
           spacingRatio={seriesVolume?.spacingRatio ?? 1}
         />
       ))}
     </section>
   );
+}
+
+/** Normale di vista (assi paziente LPS) dei tre piani MPR. */
+const PANE_NORMAL: Record<MprOrientation, [number, number, number]> = {
+  axial: [0, 0, 1],
+  coronal: [0, 1, 0],
+  sagittal: [1, 0, 0],
+};
+
+/**
+ * Un piano è affetto da spacing anisotropo solo se ricampiona l'asse delle
+ * fette: accade quando la normale al volume (colonna "normal" della direzione)
+ * giace nel piano della vista invece di esserle parallela. La vista assiale di
+ * una serie trasversale resta isotropa; coronale e sagittale no.
+ */
+function paneIsAnisotropic(volume: SeriesVolume, orientation: MprOrientation): boolean {
+  if (!volume.anisotropic) return false;
+  const normal = volume.geometry.direction;
+  if (normal.length < 9) return volume.anisotropic;
+  const sliceAxis: [number, number, number] = [normal[6], normal[7], normal[8]];
+  const viewNormal = PANE_NORMAL[orientation];
+  const dot = Math.abs(
+    sliceAxis[0] * viewNormal[0] + sliceAxis[1] * viewNormal[1] + sliceAxis[2] * viewNormal[2],
+  );
+  return dot < 0.5;
 }
 
 interface MprPaneProps {
