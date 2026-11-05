@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato complessivo | **Pre-alpha** — Fase 0 completata, Fase 1 implementata e validata |
+| Stato complessivo | **Pre-alpha** — Fasi 0 e 1 completate, Fase 2 avviata |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
@@ -41,6 +41,8 @@ fase.
 - API REST di import/consultazione con job asincroni — issue P1-07.
 - De-identificazione opzionale e sanitizzazione dei log — issue P1-08.
 - Phantom sintetico a 9 serie e validazione end-to-end — issue P1-09.
+- App shell della workstation (layout a pannelli, viewport, toolbar, status bar)
+  e design system dark con token — issue P2-01.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
@@ -48,7 +50,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | ---- | ----- | ---- |
 | Phase 0 — Environment & Architecture | ✅ | Repo, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config, tooling e CI |
 | Phase 1 — DICOM Foundation | ✅ | Scanner/grouping/metadati/geometria/volumi, persistenza, API+jobs, de-id, validazione phantom 9 serie |
-| Phase 2 — DICOM Workstation | ⬜ | |
+| Phase 2 — DICOM Workstation | 🚧 | App shell e design system della workstation (P2-01) |
 | Phase 3 — MPR & 3D | ⬜ | |
 | Phase 4 — Segmentation Lab | ⬜ | |
 | Phase 5 — AI Engine | ⬜ | |
@@ -83,6 +85,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F19 | API REST import/consultazione + job asincroni | ✅ | P1-07 |
 | F20 | De-identificazione opzionale e sanitizzazione log | ✅ | P1-08 |
 | F21 | Phantom sintetico 9 serie + validazione end-to-end | ✅ | P1-09 |
+| F22 | App shell e design system della workstation (pannelli, viewport, toolbar, status bar) | ✅ | P2-01 |
 
 ---
 
@@ -124,9 +127,9 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. Aprire le PR delle issue P1-01…P1-09 verso `master` e mergiarle.
-2. Avviare la **Phase 2 — DICOM Workstation** (viewer e consultazione serie).
-3. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5).
+1. Proseguire la **Phase 2 — DICOM Workstation**: viewer multi-viewport con
+   Cornerstone3D (P2-02) e consultazione delle serie.
+2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5).
 
 ---
 
