@@ -1,4 +1,4 @@
-"""Fixture condivise per i test di persistenza (P1-06)."""
+"""Fixture condivise della suite API (P1-06…P1-07)."""
 
 from __future__ import annotations
 
@@ -31,9 +31,14 @@ def engine(db_path: Path) -> Iterator[Engine]:
 
 
 @pytest.fixture()
-def session(engine: Engine) -> Iterator[Session]:
+def session_factory(engine: Engine) -> sessionmaker[Session]:
+    """Factory di sessioni legata all'engine di test."""
+    return create_session_factory(engine)
+
+
+@pytest.fixture()
+def session(session_factory: sessionmaker[Session]) -> Iterator[Session]:
     """Sessione con rollback finale, indipendente per ogni test."""
-    factory: sessionmaker[Session] = create_session_factory(engine)
-    with factory() as session:
+    with session_factory() as session:
         yield session
         session.rollback()
