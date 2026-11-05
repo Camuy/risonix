@@ -36,6 +36,7 @@ const LAYOUTS: Array<{ value: ViewportLayout; label: string; icon: IconName }> =
   { value: '1x2', label: 'Due viewport impilati', icon: 'layout-rows' },
   { value: '2x2', label: 'Quattro viewport', icon: 'layout-grid' },
   { value: 'mpr', label: 'MPR: assiale, coronale, sagittale', icon: 'layout-mpr' },
+  { value: '3d', label: '3D: estensione volume e piani di clipping', icon: 'layout-3d' },
 ];
 
 interface ToolOption {

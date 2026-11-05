@@ -27,6 +27,7 @@ export type IconName =
   | 'layout-rows'
   | 'layout-grid'
   | 'layout-mpr'
+  | 'layout-3d'
   | 'rotate'
   | 'reset'
   | 'fit'
@@ -177,6 +178,13 @@ const PATHS: Record<IconName, ReactNode> = {
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <line x1="12" y1="4" x2="12" y2="20" />
       <line x1="3" y1="12" x2="12" y2="12" />
+    </>
+  ),
+  'layout-3d': (
+    <>
+      <path d="M12 3 21 7.5v9L12 21 3 16.5v-9z" />
+      <path d="M3 7.5 12 12l9-4.5" />
+      <line x1="12" y1="12" x2="12" y2="21" />
     </>
   ),
   rotate: (

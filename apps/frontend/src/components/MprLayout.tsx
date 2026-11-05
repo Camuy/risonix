@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import type { SeriesSelection } from '../api/stack';
-import {
-  ensureSeriesVolume,
-  startSeriesVolumeLoad,
-  type SeriesVolume,
-} from '../cornerstone/volume';
+import type { SeriesVolume } from '../cornerstone/volume';
 import type { ApiStatus } from '../hooks/useApiStatus';
-import { useSeriesStack } from '../hooks/useSeriesStack';
+import { useCornerstoneVolume, type CornerstoneVolumeState } from '../hooks/useCornerstoneVolume';
+import type { SeriesStackState } from '../hooks/useSeriesStack';
 import { Button } from './Button';
 import { MPR_ORIENTATION_LABEL, MPR_ORIENTATIONS, type MprOrientation } from '../cornerstone/mpr';
 import { MprViewport } from './MprViewport';
@@ -19,12 +16,6 @@ interface MprLayoutProps {
   onRetry: () => void;
 }
 
-type VolumeState =
-  | { state: 'idle' }
-  | { state: 'loading' }
-  | { state: 'error'; message: string }
-  | { state: 'ready'; volume: SeriesVolume };
-
 /**
  * Vista MPR (P3-02): tre piani ortogonali dello stesso volume, con crosshair
  * world-space sincronizzato. Il volume è quello predisposto in P3-01
@@ -32,37 +23,8 @@ type VolumeState =
  * volume su disco esposto dall'API.
  */
 export function MprLayout({ selection, status, onRetry }: MprLayoutProps) {
-  const { state: stackState, reload } = useSeriesStack(selection, status.state === 'up');
-  const [volume, setVolume] = useState<VolumeState>({ state: 'idle' });
+  const { stackState, volume, reload } = useCornerstoneVolume(selection, status.state === 'up');
   const [activePane, setActivePane] = useState(0);
-
-  useEffect(() => {
-    if (stackState.state !== 'ready') {
-      setVolume({ state: 'idle' });
-      return;
-    }
-
-    let cancelled = false;
-    setVolume({ state: 'loading' });
-
-    ensureSeriesVolume(stackState.stack.series.id, stackState.stack.imageIds)
-      .then((seriesVolume) => {
-        if (cancelled) return;
-        startSeriesVolumeLoad(seriesVolume.volumeId);
-        setVolume({ state: 'ready', volume: seriesVolume });
-      })
-      .catch((cause: unknown) => {
-        if (cancelled) return;
-        setVolume({
-          state: 'error',
-          message: cause instanceof Error ? cause.message : 'Errore imprevisto',
-        });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [stackState]);
 
   if (status.state === 'checking') {
     return (
@@ -112,10 +74,7 @@ export function MprLayout({ selection, status, onRetry }: MprLayoutProps) {
           volumeId={seriesVolume?.volumeId ?? null}
           ready={ready}
           message={message}
-          onReload={() => {
-            reload();
-            setVolume({ state: 'idle' });
-          }}
+          onReload={reload}
           anisotropic={seriesVolume ? paneIsAnisotropic(seriesVolume, orientation) : false}
           spacingRatio={seriesVolume?.spacingRatio ?? 1}
         />
@@ -210,10 +169,7 @@ function MprPane({
   );
 }
 
-function mprMessage(
-  stackState: ReturnType<typeof useSeriesStack>['state'],
-  volume: VolumeState,
-): string {
+function mprMessage(stackState: SeriesStackState, volume: CornerstoneVolumeState): string {
   if (stackState.state === 'error') return 'Caricamento dello stack non riuscito';
   if (stackState.state === 'empty') return 'La serie non contiene immagini';
   if (volume.state === 'error') return 'Preparazione del volume non riuscita';

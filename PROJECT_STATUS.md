@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato complessivo | **Pre-alpha** — Fasi 0, 1 e 2 completate; Fase 3 in corso (P3-01, P3-02 completate) |
+| Stato complessivo | **Pre-alpha** — Fasi 0, 1 e 2 completate; Fase 3 in corso (P3-01, P3-02, P3-03 completate) |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
@@ -71,6 +71,11 @@ fase.
   sincronizzato tramite `CrosshairsTool` nativo in un tool group dedicato,
   navigazione per coordinate (drag + scroll su tasto/rotellina), pan/zoom e
   indicazione dello spacing anisotropo; layout MPR nella toolbar — issue P3-02.
+- Scena 3D VTK.js isolata dal viewer MPR: scene manager (render window, camera,
+  attori, resize, disposal) con bounding box orientato dell'estensione del
+  volume, gizmo di orientamento anatomico, rotazione/zoom/pan e tre piani di
+  clipping lungo gli assi paziente; layout 3D nella toolbar, caricato in modo
+  lazy con rilascio completo delle risorse WebGL — issue P3-03.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
@@ -79,7 +84,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | Phase 0 — Environment & Architecture | ✅ | Repo, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config, tooling e CI |
 | Phase 1 — DICOM Foundation | ✅ | Scanner/grouping/metadati/geometria/volumi, persistenza, API+jobs, de-id, validazione phantom 9 serie |
 | Phase 2 — DICOM Workstation | ✅ | App shell e design system (P2-01); Cornerstone3D e loader (P2-02); series explorer (P2-03); navigazione stack (P2-04); multi-viewport e crosshair (P2-05); misure e annotazioni (P2-06); pannello proprietà (P2-07); prestazioni e code-splitting (P2-08) |
-| Phase 3 — MPR & 3D | 🚧 | Servizio volumi e base volume client (P3-01); viewer MPR con crosshair sincronizzati (P3-02) |
+| Phase 3 — MPR & 3D | 🚧 | Servizio volumi e base volume client (P3-01); viewer MPR con crosshair sincronizzati (P3-02); integrazione VTK.js e scene manager 3D (P3-03) |
 | Phase 4 — Segmentation Lab | ⬜ | |
 | Phase 5 — AI Engine | ⬜ | |
 | Phase 6 — Quantitative Research | ⬜ | |
@@ -123,6 +128,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F29 | Prestazioni frontend: code-splitting, prefetch, cache limitata e baseline | ✅ | P2-08 |
 | F30 | Servizio volumi: API list/get/download NIfTI/NRRD, volume streaming client allineato e limiti di spacing | ✅ | P3-01 |
 | F31 | Viewer MPR assiale/coronale/sagittale con crosshair world-space sincronizzato e layout dedicato | ✅ | P3-02 |
+| F32 | Scena 3D VTK.js: scene manager, bounding box del volume, gizmo di orientamento, piani di clipping e layout dedicato | ✅ | P3-03 |
 
 ---
 
@@ -165,10 +171,9 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. Proseguire la **Phase 3 — MPR & 3D**: integrazione VTK.js e scene manager
-   3D (P3-03), poi volume rendering/surface reconstruction (P3-04) ed export
-   mesh/volumi (P3-05), costruiti sulla base geometrica dei volumi (P3-01) e
-   dell'MPR (P3-02).
+1. Proseguire la **Phase 3 — MPR & 3D**: volume rendering/surface
+   reconstruction (P3-04) ed export mesh/volumi (P3-05), costruiti sulla base
+   geometrica dei volumi (P3-01), dell'MPR (P3-02) e della scena 3D (P3-03).
 2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5) e
    raccogliere la baseline di memoria/FPS sul target M1 Pro (P2-08 → P7-01).
 

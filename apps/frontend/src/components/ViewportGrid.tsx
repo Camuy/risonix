@@ -1,8 +1,20 @@
+import { lazy, Suspense } from 'react';
+
 import type { SeriesSelection } from '../api/stack';
-import { isMprLayout, LAYOUT_CAPACITY, type ViewportLayout } from '../hooks/useViewportLayout';
+import {
+  is3dLayout,
+  isMprLayout,
+  LAYOUT_CAPACITY,
+  type ViewportLayout,
+} from '../hooks/useViewportLayout';
 import type { ApiStatus } from '../hooks/useApiStatus';
 import { MprLayout } from './MprLayout';
 import { ViewportPane } from './ViewportPane';
+
+/** VTK.js è pesante: la scena 3D è caricata solo quando si entra in quel layout. */
+const VtkLayout = lazy(() =>
+  import('./VtkLayout').then((module) => ({ default: module.VtkLayout })),
+);
 
 interface ViewportGridProps {
   layout: ViewportLayout;
@@ -24,6 +36,16 @@ export function ViewportGrid({
 }: ViewportGridProps) {
   if (isMprLayout(layout)) {
     return <MprLayout selection={assignments[0] ?? null} status={status} onRetry={onRetry} />;
+  }
+
+  if (is3dLayout(layout)) {
+    return (
+      <Suspense
+        fallback={<section className="viewport-grid" data-layout="3d" aria-hidden="true" />}
+      >
+        <VtkLayout selection={assignments[0] ?? null} status={status} onRetry={onRetry} />
+      </Suspense>
+    );
   }
 
   const capacity = LAYOUT_CAPACITY[layout];

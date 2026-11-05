@@ -35,7 +35,7 @@ import {
 } from './hooks/useSeriesCategories';
 import { useSeriesVolume, type SeriesVolumeState } from './hooks/useSeriesVolume';
 import { useStudyCatalog } from './hooks/useStudyCatalog';
-import { isMprLayout, useViewportLayout, type ViewportLayout } from './hooks/useViewportLayout';
+import { isVolumeLayout, useViewportLayout, type ViewportLayout } from './hooks/useViewportLayout';
 
 /** La griglia trascina Cornerstone3D: caricata solo quando serve (P2-08). */
 const ViewportGrid = lazy(() =>
@@ -343,13 +343,12 @@ export default function App() {
   );
 
   /**
-   * Cambio layout: entrando in MPR la serie attiva diventa quella di
-   * riferimento per i tre piani, così la modalità mostra ciò che l'utente
-   * stava guardando.
+   * Cambio layout: entrando in MPR o in 3D la serie attiva diventa quella di
+   * riferimento, così la modalità mostra ciò che l'utente stava guardando.
    */
   const changeLayout = useCallback(
     (next: ViewportLayout) => {
-      if (isMprLayout(next)) {
+      if (isVolumeLayout(next)) {
         setAssignments((current) => {
           const focused = current[activeSlot] ?? current.find((item) => item !== null) ?? null;
           return [focused];
