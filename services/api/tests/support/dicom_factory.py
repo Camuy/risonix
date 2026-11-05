@@ -33,6 +33,7 @@ def make_mr_dataset(
     series_description: str | None = None,
     body_part: str | None = None,
     transfer_syntax: str = ExplicitVRLittleEndian,
+    has_pixels: bool = True,
     extra: dict[str, Any] | None = None,
 ) -> FileDataset:
     """Costruisce una singola istanza MR sintetica pronta per ``save_as``."""
@@ -50,25 +51,27 @@ def make_mr_dataset(
     ds.SeriesNumber = series_number
     ds.InstanceNumber = instance_number
 
-    ds.Rows = rows
-    ds.Columns = cols
-    ds.SamplesPerPixel = 1
-    ds.PhotometricInterpretation = "MONOCHROME2"
-    ds.BitsAllocated = 16
-    ds.BitsStored = 12
-    ds.HighBit = 11
-    ds.PixelRepresentation = 0
-    ds.ImagePositionPatient = [str(v) for v in image_position]
-    ds.ImageOrientationPatient = list(image_orientation or DEFAULT_ORIENTATION)
-    ds.PixelSpacing = [str(v) for v in pixel_spacing]
-    ds.SliceThickness = str(slice_thickness)
+    if has_pixels:
+        ds.Rows = rows
+        ds.Columns = cols
+        ds.SamplesPerPixel = 1
+        ds.PhotometricInterpretation = "MONOCHROME2"
+        ds.BitsAllocated = 16
+        ds.BitsStored = 12
+        ds.HighBit = 11
+        ds.PixelRepresentation = 0
+        ds.ImagePositionPatient = [str(v) for v in image_position]
+        ds.ImageOrientationPatient = list(image_orientation or DEFAULT_ORIENTATION)
+        ds.PixelSpacing = [str(v) for v in pixel_spacing]
+        ds.SliceThickness = str(slice_thickness)
 
     if series_description is not None:
         ds.SeriesDescription = series_description
     if body_part is not None:
         ds.BodyPartExamined = body_part
 
-    ds.PixelData = pixel_bytes or (b"\x00\x00" * rows * cols)
+    if has_pixels:
+        ds.PixelData = pixel_bytes or (b"\x00\x00" * rows * cols)
     if extra:
         for key, value in extra.items():
             setattr(ds, key, value)
