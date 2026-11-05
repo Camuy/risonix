@@ -41,7 +41,8 @@ La specifica tecnica completa è in [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICA
 **Pre-alpha** — Fasi 0, 1 e 2 complete: ambiente Docker riproducibile, fondamenta
 DICOM (import, geometria, volumi, API REST) e workstation DICOM (viewer
 multi-viewport Cornerstone3D, misure, annotazioni). In corso la *Phase 3 — MPR &
-3D*: servizio volumi e base volume client completati (P3-01).
+3D*: servizio volumi e base volume client (P3-01) e viewer MPR con crosshair
+sincronizzati (P3-02).
 
 - Stato corrente, decisioni e funzionalità: [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 - Pianificazione incrementale: [`docs/ROADMAP.md`](docs/ROADMAP.md)

@@ -97,6 +97,18 @@ export async function ensureSeriesVolume(
   return { volumeId, geometry, anisotropic, spacingRatio: ratio };
 }
 
+/**
+ * Avvia il caricamento progressivo dei voxel del volume. Il loader streaming
+ * risolve con l'oggetto volume dopo aver precaricato poche fette; ``load()``
+ * scarica il resto in background, così il rendering volume (MPR, P3-02) parte
+ * subito e si popola man mano.
+ */
+export function startSeriesVolumeLoad(volumeId: string): void {
+  const volume = cache.getVolume(volumeId) as
+    (Types.IImageVolume & { load?: () => void }) | undefined;
+  volume?.load?.();
+}
+
 /** Volume già predisposto per la serie, se presente in cache. */
 export function getSeriesVolume(seriesId: number): SeriesVolume | null {
   const volume = cache.getVolume(seriesVolumeId(seriesId)) as Types.IImageVolume | undefined;

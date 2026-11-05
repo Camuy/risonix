@@ -35,7 +35,7 @@ import {
 } from './hooks/useSeriesCategories';
 import { useSeriesVolume, type SeriesVolumeState } from './hooks/useSeriesVolume';
 import { useStudyCatalog } from './hooks/useStudyCatalog';
-import { useViewportLayout } from './hooks/useViewportLayout';
+import { isMprLayout, useViewportLayout, type ViewportLayout } from './hooks/useViewportLayout';
 
 /** La griglia trascina Cornerstone3D: caricata solo quando serve (P2-08). */
 const ViewportGrid = lazy(() =>
@@ -342,6 +342,25 @@ export default function App() {
     [activeSlot, capacity],
   );
 
+  /**
+   * Cambio layout: entrando in MPR la serie attiva diventa quella di
+   * riferimento per i tre piani, così la modalità mostra ciò che l'utente
+   * stava guardando.
+   */
+  const changeLayout = useCallback(
+    (next: ViewportLayout) => {
+      if (isMprLayout(next)) {
+        setAssignments((current) => {
+          const focused = current[activeSlot] ?? current.find((item) => item !== null) ?? null;
+          return [focused];
+        });
+        setActiveSlot(0);
+      }
+      setLayout(next);
+    },
+    [activeSlot, setLayout],
+  );
+
   const refreshAll = useCallback(() => {
     void refresh();
     reloadCatalog();
@@ -411,7 +430,7 @@ export default function App() {
         onToggleLeft={() => setLeftOpen((open) => !open)}
         onToggleRight={() => setRightOpen((open) => !open)}
         onToggleFullscreen={toggleFullscreen}
-        onLayoutChange={setLayout}
+        onLayoutChange={changeLayout}
         onToolChange={setActiveTool}
         onCrosshairSizeChange={changeCrosshairSize}
         onMeasurementColorChange={changeMeasurementColor}

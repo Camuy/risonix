@@ -1,6 +1,7 @@
 import type { SeriesSelection } from '../api/stack';
-import { LAYOUT_CAPACITY, type ViewportLayout } from '../hooks/useViewportLayout';
+import { isMprLayout, LAYOUT_CAPACITY, type ViewportLayout } from '../hooks/useViewportLayout';
 import type { ApiStatus } from '../hooks/useApiStatus';
+import { MprLayout } from './MprLayout';
 import { ViewportPane } from './ViewportPane';
 
 interface ViewportGridProps {
@@ -21,6 +22,10 @@ export function ViewportGrid({
   onActivate,
   onRetry,
 }: ViewportGridProps) {
+  if (isMprLayout(layout)) {
+    return <MprLayout selection={assignments[0] ?? null} status={status} onRetry={onRetry} />;
+  }
+
   const capacity = LAYOUT_CAPACITY[layout];
 
   return (

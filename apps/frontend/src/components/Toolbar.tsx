@@ -30,11 +30,12 @@ interface ToolbarProps {
   onFitView: () => void;
 }
 
-const LAYOUTS: Array<{ value: ViewportLayout; label: string; icon: 'layout-single' | 'layout-columns' | 'layout-rows' | 'layout-grid' }> = [
+const LAYOUTS: Array<{ value: ViewportLayout; label: string; icon: IconName }> = [
   { value: '1x1', label: 'Un viewport', icon: 'layout-single' },
   { value: '2x1', label: 'Due viewport affiancati', icon: 'layout-columns' },
   { value: '1x2', label: 'Due viewport impilati', icon: 'layout-rows' },
   { value: '2x2', label: 'Quattro viewport', icon: 'layout-grid' },
+  { value: 'mpr', label: 'MPR: assiale, coronale, sagittale', icon: 'layout-mpr' },
 ];
 
 interface ToolOption {
@@ -75,13 +76,7 @@ const TOOL_GROUPS: Array<{ label: string; tools: ToolOption[] }> = [
 
 const ALL_TOOLS = TOOL_GROUPS.flatMap((group) => group.tools);
 
-const MEASUREMENT_TOOLS: ViewportTool[] = [
-  'length',
-  'angle',
-  'spline',
-  'freehand',
-  'probe',
-];
+const MEASUREMENT_TOOLS: ViewportTool[] = ['length', 'angle', 'spline', 'freehand', 'probe'];
 
 const CROSSHAIR_SIZES: Array<{ value: CrosshairSize; label: string; short: string }> = [
   { value: 'small', label: 'Crosshair piccolo', short: 'S' },
@@ -276,7 +271,7 @@ export function Toolbar({
                   <span className="tool-menu__hint">
                     {activeTool === 'probe'
                       ? 'Trascina il bordo della sfera per cambiarne il raggio.'
-                      : 'Seleziona una misura sull\'immagine per modificarla o eliminarla.'}
+                      : "Seleziona una misura sull'immagine per modificarla o eliminarla."}
                   </span>
                 </div>
                 <button
@@ -301,11 +296,7 @@ export function Toolbar({
             icon="note"
             onClick={onEditNote}
           />
-          <IconButton
-            label="Elimina misura selezionata"
-            icon="trash"
-            onClick={onDeleteSelected}
-          />
+          <IconButton label="Elimina misura selezionata" icon="trash" onClick={onDeleteSelected} />
         </>
       ) : null}
 

@@ -371,3 +371,41 @@ dagli imageId; l'eventuale caricamento NIfTI è rimandato a quando servirà
 La verifica geometrica puntuale (MPR ↔ coordinate mondo, mesh ↔ volume) è
 demandata a P3-06 su phantom noto.
 
+### 10.2 Viewer MPR con crosshair sincronizzati (P3-02)
+
+Il layout **MPR** mostra tre viewport volume ortogonali (`orthographic`:
+assiale, coronale, sagittale) dello stesso volume, costruito in streaming dagli
+`imageId` dello stack (P3-01). La sincronizzazione usa il `CrosshairsTool`
+nativo di Cornerstone3D in un **tool group dedicato** (`risonix-mpr-tools`),
+così il viewer a stack e il suo `ReferenceCursors` restano invariati.
+
+| Aspetto | Implementazione | Invariante |
+| ------- | --------------- | ---------- |
+| Piani ortogonali | `engine.enableElement` con `defaultOptions.orientation` per asse | tre piani dello stesso volume/Frame of Reference |
+| Crosshair world-space | `CrosshairsTool` attivo sul tasto primario | il punto 3D condiviso è identico nei tre piani |
+| Navigazione slice | `StackScrollTool` sulla rotellina | il cambio slice riallinea le altre viewport sullo stesso punto |
+| Pan / zoom | `PanTool` (tasto secondario), `ZoomTool` (tasto centrale) | non spostano il punto condiviso |
+| Finestra/livello | `VOISynchronizer` per Frame of Reference | contrasto coerente fra i tre piani |
+| Spacing anisotropo | overlay di avviso con il rapporto massimo/minimo | l'utente è informato della risoluzione disomogenea |
+
+**Perché il crosshair nativo.** Il `CrosshairsTool` mantiene un centro in
+coordinate paziente e riallinea le telecamere delle viewport; è lo stesso
+meccanismo usato da `sliceSync.ts` per lo stack (punto 3D condiviso), ma
+specializzato per le viewport volume. L'uso di un tool group separato evita
+interferenze con il crosshair a stack.
+
+**Verifica su phantom a geometria nota.** Con il phantom sintetico a 9 serie
+(§8), la procedura manuale è:
+
+1. Selezionare una serie diagnostica e attivare il layout **MPR** dalla toolbar.
+2. Trascinare il crosshair in un piano: gli altri due piani devono mostrare la
+   stessa coordinata paziente (l'incrocio cade sullo stesso voxel).
+3. Scorrere con la rotellina in un piano: gli altri due restano allineati senza
+   scatti percettibili.
+4. Confrontare la posizione del crosshair con l'origine/affinità del volume
+   esposti da `GET /api/volumes/{id}` (stessa convenzione LPS).
+
+La verifica geometrica automatizzata (MPR ↔ coordinate mondo) è demandata a
+P3-06, come per il volume (P3-01).
+
+
