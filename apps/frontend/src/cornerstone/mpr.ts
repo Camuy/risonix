@@ -92,8 +92,7 @@ export async function ensureMprToolGroup() {
     throw new Error('impossibile creare il tool group MPR');
   }
 
-  toolGroup.addTool(CrosshairsTool.toolName);
-  toolGroup.setToolConfiguration(CrosshairsTool.toolName, {
+  toolGroup.addTool(CrosshairsTool.toolName, {
     getReferenceLineColor: (viewportId: string) =>
       viewportColors.get(viewportId) ?? DEFAULT_LINE_COLOR,
     getReferenceLineControllable: () => true,
@@ -120,18 +119,9 @@ export async function ensureMprToolGroup() {
   return toolGroup;
 }
 
-type ToolGroup = NonNullable<ReturnType<typeof ToolGroupManager.getToolGroup>>;
-
 /** Registra il colore del crosshair della viewport del piano indicato. */
-export function registerMprViewportColor(
-  viewportId: string,
-  orientation: MprOrientation,
-  toolGroup: ToolGroup,
-): void {
+export function registerMprViewportColor(viewportId: string, orientation: MprOrientation): void {
   viewportColors.set(viewportId, MPR_ORIENTATION_COLOR[orientation]);
-  toolGroup.setToolConfiguration(CrosshairsTool.toolName, {
-    getReferenceLineColor: (id: string) => viewportColors.get(id) ?? DEFAULT_LINE_COLOR,
-  });
 }
 
 /** Rimuove la viewport MPR dal tool group e le sue annotazioni di crosshair. */

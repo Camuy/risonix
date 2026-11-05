@@ -58,7 +58,7 @@ export function MprViewport({ viewportId, orientation, volumeId }: MprViewportPr
       await addVolumeToViewports([viewportId], volumeId, true);
       if (disposed) return;
 
-      registerMprViewportColor(viewportId, orientation, toolGroup);
+      registerMprViewportColor(viewportId, orientation);
       toolGroup.addViewport(viewportId, RENDERING_ENGINE_ID);
 
       frameOfReferenceUID = viewport.getFrameOfReferenceUID() ?? null;
