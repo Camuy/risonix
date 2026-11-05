@@ -73,6 +73,8 @@ registri ufficiali (PyPI JSON API, npm registry, Docker Hub / `docker manifest`)
 | Cornerstone3D (`@cornerstonejs/core`) | Rendering DICOM | `5.15.2` | pure JS | MIT | |
 | Cornerstone3D (`@cornerstonejs/tools`) | Strumenti | `5.15.2` | pure JS | MIT | |
 | Cornerstone3D (`@cornerstonejs/dicom-image-loader`) | Decodifica | `5.15.2` | pure JS + wasm | MIT | Codec wasm inclusi |
+| Cornerstone3D (`@cornerstonejs/metadata`) | Provider metadati | `5.15.2` | pure JS | MIT | Peer di `dicom-image-loader` |
+| `dicom-parser` | Parsing DICOM | `1.8.21` | pure JS | MIT | Peer di `dicom-image-loader` |
 | VTK.js (`@kitware/vtk.js`) | Rendering 3D | `36.4.1` | pure JS | BSD-3-Clause | **Non 38.x**: vedi §5 |
 | ESLint | Lint | `10.14.0` | pure JS | MIT | Dev-only |
 | `typescript-eslint` | Regole TS | `8.72.1` | pure JS | MIT | Dev-only |

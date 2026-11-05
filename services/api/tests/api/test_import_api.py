@@ -117,6 +117,35 @@ def test_openapi_documents_import_route(client: TestClient) -> None:
     assert "/api/jobs/{job_id}" in paths
 
 
+def test_instance_file_returns_original_dicom(client: TestClient, dicom_series: Path) -> None:
+    accepted = _start_import(client, str(dicom_series))
+    _wait_for_job(client, accepted["job_id"])
+    study = client.get("/api/studies").json()[0]
+    series = client.get(f"/api/studies/{study['id']}").json()["series"][0]
+    instance = client.get(f"/api/series/{series['id']}/instances").json()[0]
+
+    response = client.get(f"/api/instances/{instance['id']}/file")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/dicom"
+    assert response.content[128:132] == b"DICM"
+
+
+def test_unknown_instance_file_returns_404(client: TestClient) -> None:
+    assert client.get("/api/instances/9999/file").status_code == 404
+
+
+def test_cors_allows_dev_origin(client: TestClient) -> None:
+    response = client.options(
+        "/api/version",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
 def test_import_with_deidentification(client: TestClient, data_dir: Path) -> None:
     study_uid = generate_uid()
     series_uid = generate_uid()

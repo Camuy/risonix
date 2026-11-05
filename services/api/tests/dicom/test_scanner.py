@@ -65,6 +65,22 @@ def test_dicomdir_and_recursive_agree(tmp_path: Path) -> None:
     assert len(report.dicom_files) == 4
 
 
+def test_scan_path_follows_dicomdir_file(tmp_path: Path) -> None:
+    """Un percorso al solo file ``DICOMDIR`` segue i record e trova le slice."""
+    paths = _slices(tmp_path / "SERIES1", "1.2.3", 4)
+    relative = [["SERIES1", p.name] for p in paths]
+    write_dicomdir(tmp_path, relative)
+
+    report = scanner.scan_path(tmp_path / "DICOMDIR")
+
+    assert report.kind == "dicomdir"
+    assert len(report.dicomdir_files) == 4
+    assert len(report.recursive_files) == 4
+    assert len(report.dicom_files) == 4
+    assert report.dicomdir_matches_recursive is True
+    assert report.dicomdir_path is not None
+
+
 def test_dicomdir_missing_file_is_reported(tmp_path: Path) -> None:
     _slices(tmp_path / "SERIES1", "1.2.3", 2)
     write_dicomdir(tmp_path, [["SERIES1", "SLICE0"], ["SERIES1", "MISSING"]])

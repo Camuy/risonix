@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { API_BASE_URL } from '../api/config';
+
 export type ServiceState = 'checking' | 'up' | 'down';
 
 export interface ApiStatus {
@@ -8,7 +10,6 @@ export interface ApiStatus {
   version?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 const REQUEST_TIMEOUT_MS = 4000;
 
 /** Verifica lo stato dell'API di import (`GET /api/version`). */

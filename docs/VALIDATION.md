@@ -242,3 +242,97 @@ saltato** (validazione dataset reale, §8.3), coprendo parser, raggruppamento,
 metadati, geometria, volumi, persistenza, API, job, de-identificazione e la
 validazione del phantom 9 serie. La validazione sul dataset reale resta una
 procedura manuale opzionale (§8.3), da ripetere quando il dataset è disponibile.
+
+---
+
+## 9. Validazione Fase 2 — DICOM Workstation (P2-02…P2-08)
+
+### 9.1 Endpoint del file DICOM (P2-02)
+
+`GET /api/instances/{id}/file` restituisce il file DICOM P10 originale (pixel
+inclusi) confinato nella data dir, con `Content-Type: application/dicom`. È il
+supporto dello schema `wadouri` di Cornerstone3D.
+
+| Caso | Atteso | Test (`tests/api/test_import_api.py`) |
+| ---- | ------ | ------------------------------------- |
+| Istanza indicizzata | `200`, magic `DICM` a offset 128 | `test_instance_file_returns_original_dicom` |
+| Istanza inesistente | `404` | `test_unknown_instance_file_returns_404` |
+| Preflight CORS dall'origin dev | `200` + `Access-Control-Allow-Origin` | `test_cors_allows_dev_origin` |
+
+### 9.2 Viewer stack, navigazione e controlli di vista (P2-02/P2-04)
+
+Cornerstone3D (`@cornerstonejs/*@5.15.2`, VTK.js `36.4.1`) è inizializzato una
+sola volta (`ensureCornerstone`). Il viewport collega lo schema `wadouri` a
+`GET /api/instances/{id}/file` e disegna la slice centrale della serie.
+
+- Navigazione slice con rotellina, frecce, `Home`/`End` e slider.
+- Rotazione a passi di 90°, inversione dei toni, `reset view` e `fit to viewport`
+  applicati in modo coordinato a tutte le viewport.
+- Coordinate fisiche (mm, spazio paziente) mostrate a schermo senza re-render
+  React (scrittura diretta nel DOM sul mouse move).
+- Errori di rendering mostrati a overlay; risorse rilasciate allo smontaggio
+  (rendering engine e tool group disabilitati).
+
+Verifica manuale con dataset reale importato:
+
+```bash
+docker compose up -d --build
+# import (una volta): POST /api/studies/import  {"source_path":"DICOMDIR"}
+# aprire http://localhost:5173 → la serie viene renderizzata nel viewport
+```
+
+### 9.3 Series explorer e categorizzazione (P2-03)
+
+Lo `SeriesExplorer` elenca studi e serie con miniatura (lazy) e metadati. La
+categoria (`Immagini` / `Localizer` / `Report` / `Altro`) è calcolata **senza
+usare `SeriesDescription`** (geometria + modality) ed è **correggibile a mano**;
+l'override è persistito per `SeriesInstanceUID` e influenza l'apribilità della
+serie.
+
+### 9.4 Layout multi-viewport e sincronizzazione (P2-05)
+
+Layout `1x1`, `2x1` (2H), `1x2` (2V) e `2x2`, persistito in `localStorage`. Le
+viewport dello stesso `FrameOfReferenceUID` condividono crosshair e navigazione:
+il cursore e il cambio slice allineano le altre viste (anche ortogonali) al punto
+3D condiviso; zoom/pan e finestra/livello sono sincronizzati via sincronizzatori
+Cornerstone.
+
+### 9.5 Misure, annotazioni e orientamento (P2-06)
+
+Strumenti: lunghezza, angolo, polilinea concatenata, mano libera e sonda-sfera.
+Le misure usano lo spacing reale di Cornerstone; sono modificabili, etichettabili
+(nota) e cancellabili (anche da tastiera, `Canc`/`Backspace`). Le etichette di
+orientamento L/R, A/P, S/I sono derivate dai vettori di camera.
+
+### 9.6 Pannello proprietà (P2-07)
+
+La sidebar destra mostra i metadati della serie selezionata, la slice corrente
+(aggiornata durante la navigazione via evento di cambio slice) e una sezione
+predisposta per la segmentazione (Fase 4). Nessuna PHI superflua in chiaro.
+
+### 9.7 Prestazioni e baseline (P2-08)
+
+- **Lazy loading**: Cornerstone3D è fuori dal bundle iniziale; `ViewportGrid`,
+  `SeriesThumbnail` e gli hook di diagnostica sono importati dinamicamente.
+- **Progressive loading**: prefetch con priorità bassa delle 2 slice adiacenti.
+- **Cache limitata**: `cache.setMaxCacheSize(768)` MB.
+- **Re-render ridotti**: le coordinate del cursore non passano dallo stato React.
+
+Baseline di build misurata (`npm run build`, 2026-11-05):
+
+| Asset | Dimensione | gzip |
+| ----- | ---------- | ---- |
+| Entry `index-*.js` | ~480 kB | ~142 kB |
+| CSS | ~21 kB | ~4 kB |
+| Chunk async `init-*.js` (Cornerstone/VTK) | ~3.590 MB | ~979 kB |
+| Chunk async `engine-*.js` | ~118 kB | ~35 kB |
+
+Prima del code-splitting l'entry era ~4.209 kB; la baseline di memoria/FPS sul
+target M1 Pro sarà raccolta in P7-01.
+
+### 9.8 Qualità
+
+`make frontend-lint frontend-typecheck` e `npm run build` (in `frontend-tools`)
+sono verdi; la CI esegue `npm ci` sul lockfile aggiornato e la suite API
+(`make api-test`) resta verde.
+
