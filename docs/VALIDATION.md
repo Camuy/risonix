@@ -237,11 +237,12 @@ si raggruppi in 9 serie immagine e che ogni serie abbia geometria determinabile
 
 ### 8.4 Esito
 
-Tutta la suite (`make api-test`) è verde in Docker: **100 test passati, 1
+Tutta la suite (`make api-test`) è verde in Docker: **110 test passati, 1
 saltato** (validazione dataset reale, §8.3), coprendo parser, raggruppamento,
-metadati, geometria, volumi, persistenza, API, job, de-identificazione e la
-validazione del phantom 9 serie. La validazione sul dataset reale resta una
-procedura manuale opzionale (§8.3), da ripetere quando il dataset è disponibile.
+metadati, geometria, volumi, persistenza, API, job, de-identificazione, la
+validazione del phantom 9 serie e l'API dei volumi di Fase 3 (§10). La
+validazione sul dataset reale resta una procedura manuale opzionale (§8.3), da
+ripetere quando il dataset è disponibile.
 
 ---
 
@@ -335,4 +336,115 @@ target M1 Pro sarà raccolta in P7-01.
 `make frontend-lint frontend-typecheck` e `npm run build` (in `frontend-tools`)
 sono verdi; la CI esegue `npm ci` sul lockfile aggiornato e la suite API
 (`make api-test`) resta verde.
+
+---
+
+## 10. Validazione Fase 3 — MPR & 3D (P3-01…)
+
+### 10.1 Servizio volumi e base volume client (P3-01)
+
+Il router `/api/volumes` espone i volumi derivati costruiti dal builder (P1-05),
+senza alcun resampling MPR lato server.
+
+| Caso | Atteso | Test (`tests/api/test_volumes_api.py`) |
+| ---- | ------ | ------------------------------------- |
+| Elenco e filtro per serie | `200`, volumi della serie | `test_list_and_filter_volumes` |
+| Dettaglio con geometria completa | `shape`, `spacing`, `affine_lps` 4×4 | `test_get_volume_detail_exposes_affine` |
+| Download NIfTI | `200`, `application/gzip`, magic `1f 8b` | `test_download_nifti_volume` |
+| Download NRRD | `200`, header `NRRD` | `test_download_nrrd_volume` |
+| Volume inesistente | `404` | `test_unknown_volume_returns_404` |
+
+Lato client `cornerstone/volume.ts` costruisce il volume **streaming** dagli
+stessi `imageId` dello stack (`createAndCacheVolume`): la geometria (spacing,
+origine, orientamento LPS) è per costruzione quella del volume su disco. In
+P3-01 il volume non viene aggiunto alle viewport, così il rendering a stack
+resta invariato; `addVolumesToViewports` è predisposto per il viewer MPR
+(P3-02) e lo spacing anisotropo è segnalato nel pannello proprietà.
+
+**Limite noto.** Il download NIfTI/NRRD è esposto dall'API come artefatto di
+interoperabilità (e fallback del file su disco), ma il *parsing* NIfTI lato
+client non è ancora disponibile: le dipendenze correnti (Cornerstone3D, VTK.js)
+non includono un volume loader NIfTI. Il percorso primario resta lo streaming
+dagli imageId; l'eventuale caricamento NIfTI è rimandato a quando servirà
+(vedi R5 in [`PROJECT_STATUS.md`](../PROJECT_STATUS.md#4-decisioni-aperte)).
+
+La verifica geometrica puntuale (MPR ↔ coordinate mondo, mesh ↔ volume) è
+demandata a P3-06 su phantom noto.
+
+### 10.2 Viewer MPR con crosshair sincronizzati (P3-02)
+
+Il layout **MPR** mostra tre viewport volume ortogonali (`orthographic`:
+assiale, coronale, sagittale) dello stesso volume, costruito in streaming dagli
+`imageId` dello stack (P3-01). La sincronizzazione usa il `CrosshairsTool`
+nativo di Cornerstone3D in un **tool group dedicato** (`risonix-mpr-tools`),
+così il viewer a stack e il suo `ReferenceCursors` restano invariati.
+
+| Aspetto | Implementazione | Invariante |
+| ------- | --------------- | ---------- |
+| Piani ortogonali | `engine.enableElement` con `defaultOptions.orientation` per asse | tre piani dello stesso volume/Frame of Reference |
+| Crosshair world-space | `CrosshairsTool` attivo sul tasto primario | il punto 3D condiviso è identico nei tre piani |
+| Navigazione slice | `StackScrollTool` sulla rotellina | il cambio slice riallinea le altre viewport sullo stesso punto |
+| Pan / zoom | `PanTool` (tasto secondario), `ZoomTool` (tasto centrale) | non spostano il punto condiviso |
+| Finestra/livello | `VOISynchronizer` per Frame of Reference | contrasto coerente fra i tre piani |
+| Spacing anisotropo | overlay di avviso con il rapporto massimo/minimo | l'utente è informato della risoluzione disomogenea |
+
+**Perché il crosshair nativo.** Il `CrosshairsTool` mantiene un centro in
+coordinate paziente e riallinea le telecamere delle viewport; è lo stesso
+meccanismo usato da `sliceSync.ts` per lo stack (punto 3D condiviso), ma
+specializzato per le viewport volume. L'uso di un tool group separato evita
+interferenze con il crosshair a stack.
+
+**Verifica su phantom a geometria nota.** Con il phantom sintetico a 9 serie
+(§8), la procedura manuale è:
+
+1. Selezionare una serie diagnostica e attivare il layout **MPR** dalla toolbar.
+2. Trascinare il crosshair in un piano: gli altri due piani devono mostrare la
+   stessa coordinata paziente (l'incrocio cade sullo stesso voxel).
+3. Scorrere con la rotellina in un piano: gli altri due restano allineati senza
+   scatti percettibili.
+4. Confrontare la posizione del crosshair con l'origine/affinità del volume
+   esposti da `GET /api/volumes/{id}` (stessa convenzione LPS).
+
+La verifica geometrica automatizzata (MPR ↔ coordinate mondo) è demandata a
+P3-06, come per il volume (P3-01).
+
+### 10.3 Scena 3D VTK.js e scene manager (P3-03)
+
+Il layout **3D** mostra una scena VTK.js (`@kitware/vtk.js@36.4.1`) isolata dal
+viewer MPR. La geometria renderizzata è l'**estensione spaziale del volume**
+(P3-01): un bounding box orientato secondo la direzione in spazio paziente, con
+gizmo di orientamento anatomico (`vtkOrientationMarkerWidget` + `vtkAxesActor`).
+
+| Aspetto | Implementazione | Invariante |
+| ------- | --------------- | ---------- |
+| Scene manager | `Scene3D` su `vtkGenericRenderWindow` (`listenWindowResize: false`) | ciclo di vita del contesto WebGL racchiuso nella classe |
+| Camera / camera-fit | `renderer.resetCamera()` al primo resize non nullo | la scena è inquadrata appena il contenitore ha dimensione |
+| Attori | `vtkCubeSource` + `vtkMapper` + `vtkActor` con user matrix direzione+centro | il box coincide con l'inviluppo dei vertici del volume |
+| Rotazione/zoom/pan | `InteractorStyleTrackballCamera` (default VTK.js) | il gizmo segue l'orientamento della camera |
+| Piani di clipping | tre `vtkPlane` (assi paziente) sul mapper, slider + abilitazione | il piano al minimo non taglia nulla; il box si erode verso il massimo |
+| Resize | `ResizeObserver` → `renderWindow.resize()` | nessun listener globale (`listenWindowResize: false`) |
+| Disposal | `dispose()` rilascia widget, attori, mapper, sorgenti e render window; `container.replaceChildren()` | nessun leak di contesto WebGL al cambio layout |
+
+**Code-splitting.** VTK.js vive in un chunk asincrono dedicato
+(`VtkLayout-*.js`, ~107 kB / ~28 kB gzip), caricato solo entrando nel layout 3D:
+non pesa sull'entry né sul chunk di Cornerstone3D (P2-08). Il modulo della scena
+importa il profilo di rendering Geometria (`Rendering/Profiles/Geometry`) come
+effetto collaterale, dichiarato in `src/vtk/vtk-modules.d.ts`.
+
+**Distinzione da P3-04.** Qui *non* si fa volume rendering né ricostruzione di
+superficie: la scena fornisce il sistema di riferimento (inviluppo, orientamento,
+clipping) entro cui P3-04 inserirà volume rendering e mesh.
+
+**Verifica.** Montaggio su GPU reale (Chrome headless, ANGLE Metal su M1 Pro):
+contesto `WebGL 2.0`, `gl.getError() = 0`; il box orientato e il gizmo sono
+renderizzati; l'abilitazione di un piano di clipping a metà asse erode il box;
+tre cicli di smontaggio/montaggio (3D ↔ 1 viewport) mantengono **un solo canvas**
+e non producono eccezioni. Nessun errore di console oltre al `favicon.ico` 404.
+
+Procedura manuale (phantom §8): selezionare una serie, aprire il layout **3D**,
+ruotare/zoomare/panare, abilitare un piano di clipping e verificarne l'effetto;
+confrontare il bounding box con origine/dimensioni/spacing del volume esposti da
+`GET /api/volumes/{id}`. La verifica geometrica puntuale (mesh ↔ volume) resta
+demandata a P3-06.
+
 

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { SeriesSummary } from './api/client';
+import { volumeDownloadUrl, type SeriesSummary } from './api/client';
 import type { SeriesSelection } from './api/stack';
 import { IconButton } from './components/Button';
 import { Panel } from './components/Panel';
@@ -28,9 +28,14 @@ import { useAnnotationSelection } from './hooks/useAnnotationSelection';
 import { useApiStatus, type ApiStatus } from './hooks/useApiStatus';
 import { useFullscreen } from './hooks/useFullscreen';
 import { PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, useResizablePanels } from './hooks/useResizablePanels';
-import { categoryOf, useSeriesCategories, type SeriesCategoryId } from './hooks/useSeriesCategories';
+import {
+  categoryOf,
+  useSeriesCategories,
+  type SeriesCategoryId,
+} from './hooks/useSeriesCategories';
+import { useSeriesVolume, type SeriesVolumeState } from './hooks/useSeriesVolume';
 import { useStudyCatalog } from './hooks/useStudyCatalog';
-import { useViewportLayout } from './hooks/useViewportLayout';
+import { isVolumeLayout, useViewportLayout, type ViewportLayout } from './hooks/useViewportLayout';
 
 /** La griglia trascina Cornerstone3D: caricata solo quando serve (P2-08). */
 const ViewportGrid = lazy(() =>
@@ -85,10 +90,12 @@ function PropertiesContent({
   status,
   selection,
   slice,
+  volume,
 }: {
   status: ApiStatus;
   selection: SeriesSelection | null;
   slice: SliceInfo | null;
+  volume: SeriesVolumeState;
 }) {
   if (status.state !== 'up') {
     return (
@@ -120,8 +127,76 @@ function PropertiesContent({
           </dd>
         </div>
       ) : null}
+      <VolumeSection state={volume} />
       <SegmentationPlaceholder />
     </div>
+  );
+}
+
+/** Oltre questa soglia lo spacing è considerato anisotropo (30% di scarto). */
+const ANISOTROPY_RATIO_THRESHOLD = 1.3;
+
+function isAnisotropicSpacing(spacing: number[] | null): boolean {
+  if (!spacing) return false;
+  const positive = spacing.filter((value) => value > 0);
+  if (positive.length === 0) return false;
+  return Math.max(...positive) / Math.min(...positive) > ANISOTROPY_RATIO_THRESHOLD;
+}
+
+/** Volume derivato della serie con geometria, limiti di spacing e download (P3-01). */
+function VolumeSection({ state }: { state: SeriesVolumeState }) {
+  if (state.state === 'idle' || state.state === 'loading') {
+    return (
+      <section className="panel-section" aria-label="Volume">
+        <h3 className="panel-section__title">Volume</h3>
+        <p className="panel-section__text text-faint">Preparazione del volume…</p>
+      </section>
+    );
+  }
+
+  if (state.state !== 'ready') {
+    const message =
+      state.state === 'error'
+        ? `Volume non disponibile: ${state.message}`
+        : 'Nessun volume derivato per questa serie.';
+    return (
+      <section className="panel-section" aria-label="Volume">
+        <h3 className="panel-section__title">Volume</h3>
+        <p className="panel-section__text text-faint">{message}</p>
+      </section>
+    );
+  }
+
+  const { volume } = state;
+  const rows: Array<[string, string]> = [
+    ['Formato', volume.volume_format.toUpperCase()],
+    ['Dimensioni', volume.shape ? volume.shape.join(' × ') : '—'],
+    ['Spacing', formatSpacing(volume.spacing)],
+    ['Geometria', volume.irregular ? 'Irregolare' : 'Regolare'],
+  ];
+
+  return (
+    <section className="panel-section" aria-label="Volume">
+      <h3 className="panel-section__title">Volume</h3>
+      <dl className="properties">
+        {rows.map(([label, value]) => (
+          <div key={label} className="properties__row">
+            <dt className="properties__label">{label}</dt>
+            <dd className="properties__value">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {isAnisotropicSpacing(volume.spacing) ? (
+        <p className="panel-section__text text-faint">
+          Spacing anisotropo: i piani MPR avranno risoluzione disomogenea fra gli assi.
+        </p>
+      ) : null}
+      <div className="panel-section__actions">
+        <a className="button" href={volumeDownloadUrl(volume.id)} download>
+          Scarica volume
+        </a>
+      </div>
+    </section>
   );
 }
 
@@ -267,6 +342,24 @@ export default function App() {
     [activeSlot, capacity],
   );
 
+  /**
+   * Cambio layout: entrando in MPR o in 3D la serie attiva diventa quella di
+   * riferimento, così la modalità mostra ciò che l'utente stava guardando.
+   */
+  const changeLayout = useCallback(
+    (next: ViewportLayout) => {
+      if (isVolumeLayout(next)) {
+        setAssignments((current) => {
+          const focused = current[activeSlot] ?? current.find((item) => item !== null) ?? null;
+          return [focused];
+        });
+        setActiveSlot(0);
+      }
+      setLayout(next);
+    },
+    [activeSlot, setLayout],
+  );
+
   const refreshAll = useCallback(() => {
     void refresh();
     reloadCatalog();
@@ -319,6 +412,7 @@ export default function App() {
   );
 
   const activeSelection = assignments[activeSlot] ?? null;
+  const { state: volumeState } = useSeriesVolume(activeSelection, status.state === 'up');
 
   return (
     <div className="app-shell" ref={shellRef}>
@@ -335,7 +429,7 @@ export default function App() {
         onToggleLeft={() => setLeftOpen((open) => !open)}
         onToggleRight={() => setRightOpen((open) => !open)}
         onToggleFullscreen={toggleFullscreen}
-        onLayoutChange={setLayout}
+        onLayoutChange={changeLayout}
         onToolChange={setActiveTool}
         onCrosshairSizeChange={changeCrosshairSize}
         onMeasurementColorChange={changeMeasurementColor}
@@ -353,7 +447,9 @@ export default function App() {
             side="left"
             width={leftWidth}
             title="Studi"
-            actions={<IconButton label="Aggiorna elenco studi" icon="refresh" onClick={refreshAll} />}
+            actions={
+              <IconButton label="Aggiorna elenco studi" icon="refresh" onClick={refreshAll} />
+            }
           >
             <SeriesExplorer
               status={status}
@@ -407,6 +503,7 @@ export default function App() {
               status={status}
               selection={activeSelection}
               slice={sliceInfo[activeViewportId] ?? null}
+              volume={volumeState}
             />
           </Panel>
         ) : null}

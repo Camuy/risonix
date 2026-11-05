@@ -27,6 +27,7 @@ import {
   unregisterPresentationSync,
 } from '../cornerstone/presentationSync';
 import { prefetchNeighborSlices } from '../cornerstone/viewportControls';
+import { ensureSeriesVolume } from '../cornerstone/volume';
 import { SLICE_CHANGE_EVENT, type SliceChangeDetail } from '../cornerstone/events';
 import { StateMessage } from './StateMessage';
 
@@ -213,6 +214,13 @@ export function StackViewport({ stack, viewportId, active, onActivate }: StackVi
       prefetchNeighborSlices(stack.imageIds, middleIndex);
       announceSlice(middleIndex);
 
+      // Prepara il volume streaming della serie (P3-01): è la base geometrica
+      // di MPR e 3D. Non viene aggiunto alle viewport, quindi il rendering a
+      // stack resta invariato; il volume è opzionale e non blocca la vista.
+      void ensureSeriesVolume(stack.series.id, stack.imageIds).catch(() => {
+        /* volume non disponibile: il viewer a stack continua a funzionare */
+      });
+
       const forUID = viewport.getFrameOfReferenceUID();
       if (forUID) {
         registerPresentationSync(forUID, viewportId);
@@ -247,9 +255,7 @@ export function StackViewport({ stack, viewportId, active, onActivate }: StackVi
         event.stopImmediatePropagation();
         return;
       }
-      const detail = (
-        event as CustomEvent<{ range?: { lower?: number; upper?: number } }>
-      ).detail;
+      const detail = (event as CustomEvent<{ range?: { lower?: number; upper?: number } }>).detail;
       const range = detail?.range;
       if (range && typeof range.lower === 'number' && typeof range.upper === 'number') {
         lockedVoiRef.current = { lower: range.lower, upper: range.upper };
@@ -482,7 +488,10 @@ export function StackViewport({ stack, viewportId, active, onActivate }: StackVi
       }
       viewportRef.current = null;
       unregisterViewport(viewportId);
-      ToolGroupManager.getToolGroup(TOOL_GROUP_ID)?.removeViewports(RENDERING_ENGINE_ID, viewportId);
+      ToolGroupManager.getToolGroup(TOOL_GROUP_ID)?.removeViewports(
+        RENDERING_ENGINE_ID,
+        viewportId,
+      );
       getRenderingEngine(RENDERING_ENGINE_ID)?.disableElement(viewportId);
     };
   }, [stack, viewportId, middleIndex, sliceCount]);

@@ -16,7 +16,7 @@ from .db.migrate import upgrade_to_head
 from .db.session import create_db_engine, create_session_factory
 from .dicom.volume import VolumeFormat
 from .jobs import JobRunner
-from .routers import health, instances, jobs, series, studies, version
+from .routers import health, instances, jobs, series, studies, version, volumes
 from .services.import_service import import_study
 
 
@@ -85,6 +85,7 @@ def create_app() -> FastAPI:
     app.include_router(studies.router)
     app.include_router(series.router)
     app.include_router(instances.router)
+    app.include_router(volumes.router)
     app.include_router(jobs.router)
     return app
 

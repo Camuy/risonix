@@ -110,6 +110,13 @@ class VolumeSummary(BaseModel):
     checksum_sha256: str | None
 
 
+class VolumeDetail(VolumeSummary):
+    """Volume derivato con la geometria completa, incluse l'affinità LPS."""
+
+    affine_lps: list[list[float]] | None = None
+    created_at: datetime | None = None
+
+
 class MetadataResponse(BaseModel):
     """Metadati normalizzati di una singola istanza."""
 
