@@ -17,9 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, cast
 
-import pydicom
-from pydicom.errors import InvalidDicomError
-
+from app.dicom.headers import as_float_tuple, as_int, as_text, read_dataset
 from app.dicom.scanner import ScanError, ScanReport
 
 logger = logging.getLogger(__name__)
@@ -151,68 +149,32 @@ def _matches_prefix(value: str | None, prefixes: tuple[str, ...]) -> bool:
     return value.startswith(prefixes)
 
 
-def _read_header(path: Path) -> Any:
-    try:
-        return pydicom.dcmread(path, stop_before_pixels=True, specific_tags=_STUDY_TAGS)
-    except InvalidDicomError:
-        pass
-    except (OSError, ValueError):
-        return None
-    try:
-        return pydicom.dcmread(path, stop_before_pixels=True, force=True, specific_tags=_STUDY_TAGS)
-    except (InvalidDicomError, OSError, ValueError):
-        return None
-
-
-def _as_text(value: object) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None
-
-
-def _as_int(value: Any) -> int | None:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _as_float_tuple(value: Any) -> tuple[float, ...] | None:
-    if value is None:
-        return None
-    try:
-        return tuple(float(item) for item in value)
-    except (TypeError, ValueError):
-        return None
-
-
 def load_instance(path: str | Path) -> InstanceInfo | None:
     """Legge l'header di un file e ne restituisce i metadati di raggruppamento."""
     target = Path(path)
-    header = _read_header(target)
+    header = read_dataset(target, _STUDY_TAGS)
     if header is None:
         return None
-    sop_instance_uid = _as_text(getattr(header, "SOPInstanceUID", None))
+    sop_instance_uid = as_text(getattr(header, "SOPInstanceUID", None))
     if not sop_instance_uid:
         return None
-    sop_class_uid = _as_text(getattr(header, "SOPClassUID", None))
-    modality = _as_text(getattr(header, "Modality", None))
+    sop_class_uid = as_text(getattr(header, "SOPClassUID", None))
+    modality = as_text(getattr(header, "Modality", None))
     has_pixels = bool(getattr(header, "Rows", None) and getattr(header, "Columns", None))
-    position = _as_float_tuple(getattr(header, "ImagePositionPatient", None))
+    position = as_float_tuple(getattr(header, "ImagePositionPatient", None))
     if position is not None and len(position) != 3:
         position = None
-    orientation = _as_float_tuple(getattr(header, "ImageOrientationPatient", None))
+    orientation = as_float_tuple(getattr(header, "ImageOrientationPatient", None))
     return InstanceInfo(
         path=str(target),
         sop_instance_uid=sop_instance_uid,
         sop_class_uid=sop_class_uid,
         modality=modality,
-        study_instance_uid=_as_text(getattr(header, "StudyInstanceUID", None)),
-        series_instance_uid=_as_text(getattr(header, "SeriesInstanceUID", None)),
-        instance_number=_as_int(getattr(header, "InstanceNumber", None)),
-        series_number=_as_int(getattr(header, "SeriesNumber", None)),
-        series_description=_as_text(getattr(header, "SeriesDescription", None)),
+        study_instance_uid=as_text(getattr(header, "StudyInstanceUID", None)),
+        series_instance_uid=as_text(getattr(header, "SeriesInstanceUID", None)),
+        instance_number=as_int(getattr(header, "InstanceNumber", None)),
+        series_number=as_int(getattr(header, "SeriesNumber", None)),
+        series_description=as_text(getattr(header, "SeriesDescription", None)),
         image_position=position,
         image_orientation=orientation,
         kind=classify_instance(
