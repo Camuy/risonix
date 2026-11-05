@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pydicom
 import pytest
 from pydicom.uid import generate_uid
 from sqlalchemy.orm import Session
 
+from app.dicom.deident import safe_component
 from app.repositories import SeriesRepository, StudyRepository, VolumeRepository
 from app.services.import_service import ImportValidationError, import_study, validate_source
 from tests.support.dicom_factory import write_mr_slice
@@ -77,6 +79,34 @@ def test_import_can_skip_volumes(session: Session, tmp_path: Path) -> None:
     series = SeriesRepository(session).get_by_uid(series_uid)
     assert series is not None
     assert VolumeRepository(session).list_for_series(series.id) == []
+
+
+def test_import_writes_deidentified_copies(session: Session, tmp_path: Path) -> None:
+    data_dir = tmp_path / "data"
+    source = data_dir / "incoming" / "phi"
+    study_uid = generate_uid()
+    series_uid = generate_uid()
+    for index in range(2):
+        write_mr_slice(
+            source / f"slice_{index}.dcm",
+            study_uid=study_uid,
+            series_uid=series_uid,
+            instance_number=index + 1,
+            image_position=(0.0, 0.0, float(index) * 2.0),
+            extra={"PatientName": "Doe^John", "PatientID": "999"},
+        )
+
+    result = import_study(session, source, data_dir=data_dir, deidentify=True)
+
+    assert result.deidentified == 2
+    derived = data_dir / "derived" / "deidentified" / safe_component(series_uid)
+    copies = sorted(derived.glob("*.dcm"))
+    assert len(copies) == 2
+    assert pydicom.dcmread(copies[0]).PatientName == "ANONYMOUS"
+    assert pydicom.dcmread(source / "slice_0.dcm").PatientName == "Doe^John"
+
+    again = import_study(session, source, data_dir=data_dir, deidentify=True)
+    assert again.deidentified == 0
 
 
 def test_validate_source_accepts_relative_inside_data_dir(tmp_path: Path) -> None:

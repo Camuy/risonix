@@ -21,6 +21,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.dicom import geometry, scanner
+from app.dicom.deident import DeidPolicy, deidentify_file, safe_component
 from app.dicom.metadata import InstanceMetadata, extract_metadata
 from app.dicom.study import SeriesGroup, group_scan
 from app.dicom.volume import VolumeBuildError, VolumeFormat, build_volume, default_volume_path
@@ -60,6 +61,7 @@ class ImportResult:
     series: int = 0
     instances: int = 0
     volumes: int = 0
+    deidentified: int = 0
     unreadable: int = 0
 
     def to_dict(self) -> dict[str, int]:
@@ -68,6 +70,7 @@ class ImportResult:
             "series": self.series,
             "instances": self.instances,
             "volumes": self.volumes,
+            "deidentified": self.deidentified,
             "unreadable": self.unreadable,
         }
 
@@ -91,6 +94,8 @@ def _persist_series(
     build_volumes: bool,
     volume_format: VolumeFormat,
     allow_irregular: bool,
+    deidentify: bool,
+    deid_policy: DeidPolicy,
     result: ImportResult,
 ) -> None:
     series_repo = SeriesRepository(session)
@@ -154,6 +159,9 @@ def _persist_series(
         )
         result.instances += 1
 
+    if deidentify:
+        _write_deidentified_copies(group, data_dir, uid, deid_policy, result)
+
     if not build_volumes or not group.is_image or len(metadatas) < 2:
         return
     if geo.normal is None or geo.slice_spacing is None:
@@ -199,6 +207,23 @@ def _study_id_for(session: Session, study_instance_uid: str) -> int:
     return study.id
 
 
+def _write_deidentified_copies(
+    group: SeriesGroup,
+    data_dir: Path,
+    series_uid: str,
+    policy: DeidPolicy,
+    result: ImportResult,
+) -> None:
+    """Scrive copie de-identificate in ``data/derived`` (gli originali restano intatti)."""
+    destination_dir = data_dir / "derived" / "deidentified" / safe_component(series_uid)
+    for instance in group.instances:
+        destination = destination_dir / Path(instance.path).name
+        if destination.exists():
+            continue
+        deidentify_file(instance.path, destination, policy)
+        result.deidentified += 1
+
+
 def import_study(
     session: Session,
     source_path: str | Path,
@@ -207,6 +232,9 @@ def import_study(
     build_volumes: bool = True,
     volume_format: VolumeFormat = "nifti",
     allow_irregular: bool = False,
+    deidentify: bool = False,
+    deidentify_salt: str = "risonix",
+    deidentify_remap_uids: bool = False,
 ) -> ImportResult:
     """Importa studi/serie/istanze dal percorso e li persiste; restituisce i conteggi."""
     source = validate_source(source_path, data_dir)
@@ -217,6 +245,7 @@ def import_study(
 
     result = ImportResult(unreadable=len(grouped.unreadable))
     studies = StudyRepository(session)
+    deid_policy = DeidPolicy(salt=deidentify_salt, remap_uids=deidentify_remap_uids)
 
     for study_group in grouped.studies:
         uid = study_group.study_instance_uid
@@ -238,6 +267,8 @@ def import_study(
                 build_volumes=build_volumes,
                 volume_format=volume_format,
                 allow_irregular=allow_irregular,
+                deidentify=deidentify,
+                deid_policy=deid_policy,
                 result=result,
             )
 

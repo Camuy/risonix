@@ -30,6 +30,9 @@ d'ambiente e **come si gestiscono i segreti**. Il modello di minaccia assume
 | `MRI_ENV` | `development` | API/AI | Ambiente logico (`development`/`staging`/`production`). |
 | `MRI_LOG_LEVEL` | `info` | API/AI | `critical`/`error`/`warning`/`info`/`debug` (normalizzato). |
 | `MRI_LOG_FORMAT` | `json` | API/AI | `json` (strutturato) oppure `text`. |
+| `MRI_DEIDENTIFY` | `false` | API | De-identifica i PHI: scrive copie ripulite in `data/derived` (vedi §7). |
+| `MRI_DEIDENTIFY_SALT` | `risonix` | API | Salt per la pseudonimizzazione/rimappatura degli UID. |
+| `MRI_DEIDENTIFY_REMAP_UIDS` | `false` | API | Rimappa Study/Series/SOP Instance UID nelle copie de-identificate. |
 | `MRI_BIND_ADDR` | `127.0.0.1` | Compose | Indirizzo di bind dei servizi (vedi §3). |
 | `MRI_FRONTEND_PORT` | `5173` | Compose | Porta host del frontend (dev). |
 | `MRI_FRONTEND_PROD_PORT` | `3000` | Compose | Porta host del frontend (prod). |
@@ -106,3 +109,29 @@ I servizi applicativi leggono **solo** variabili con prefisso `MRI_`
   consistente (anche a database in uso) in `data/database/backups/`, con
   timestamp UTC nel nome. Il ripristino avviene sostituendo il file a servizio
   fermo. La rotazione è manuale: nessuna cancellazione automatica.
+
+---
+
+## 7. De-identificazione e sanitizzazione dei log
+
+La de-identificazione è **opzionale** e **non modifica mai gli originali**: legge
+i DICOM e scrive **copie derivate** ripulite in `data/derived/deidentified/`.
+
+- Attivazione di default con `MRI_DEIDENTIFY=true`, oppure per singola richiesta
+  di import (`POST /api/studies/import` con `"deidentify": true|false`); il campo
+  richiesta ha precedenza sull'impostazione del servizio.
+- La copia rimuove i tag PHI più comuni (identità paziente, date/indirizzi,
+  medici e istituzioni, numeri di accesso) e sostituisce `PatientName`/`PatientID`
+  con un segnaposto; imposta `PatientIdentityRemoved` e `DeidentificationMethod`.
+- `MRI_DEIDENTIFY_REMAP_UIDS=true` rende gli UID pseudonimi in modo
+  **deterministico** (stesso input → stesso UID), preservando i riferimenti
+  incrociati senza esporre gli identificatori originali. `MRI_DEIDENTIFY_SALT`
+  è il salt usato.
+- La sanitizzazione dei log (`app.core.sanitize`) redige i valori associati a
+  chiavi PHI note e un filtro (`PhiRedactionFilter`) è applicato a ogni handler di
+  logging: nessun valore identificativo viene emesso, nemmeno nei messaggi di
+  debug strutturati.
+
+> La de-identificazione copre il profilo *Basic Application Level
+> Confidentiality* ma non è esaustiva: prima di condividere dati fuori
+> dall'ambiente locale va eseguita una verifica dedicata.

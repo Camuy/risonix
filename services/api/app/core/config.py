@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     db_path: str = "/data/database/mri.sqlite3"
     log_level: str = "info"
     log_format: Literal["json", "text"] = "json"
+    deidentify: bool = False
+    deidentify_salt: str = "risonix"
+    deidentify_remap_uids: bool = False
 
     @field_validator("log_level")
     @classmethod

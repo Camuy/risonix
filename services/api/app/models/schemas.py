@@ -31,6 +31,10 @@ class ImportRequest(BaseModel):
     allow_irregular: bool = Field(
         default=False, description="Forza la conversione di serie geometricamente irregolari."
     )
+    deidentify: bool | None = Field(
+        default=None,
+        description="Anonimizza i tag PHI; default dal servizio (MRI_DEIDENTIFY).",
+    )
 
 
 class ImportAccepted(BaseModel):

@@ -5,6 +5,7 @@ import logging
 from datetime import UTC, datetime
 
 from .config import Settings
+from .sanitize import PhiRedactionFilter
 
 
 class JsonFormatter(logging.Formatter):
@@ -25,6 +26,7 @@ class JsonFormatter(logging.Formatter):
 def configure_logging(settings: Settings) -> None:
     """Configura il logger root in base alle impostazioni del servizio."""
     handler = logging.StreamHandler()
+    handler.addFilter(PhiRedactionFilter())
     if settings.log_format.lower() == "json":
         handler.setFormatter(JsonFormatter())
     else:

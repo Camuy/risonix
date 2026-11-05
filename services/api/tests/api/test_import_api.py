@@ -5,7 +5,11 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import pydicom
 from fastapi.testclient import TestClient
+from pydicom.uid import generate_uid
+
+from tests.support.dicom_factory import write_mr_slice
 
 _TERMINAL = {"completed", "failed", "cancelled"}
 
@@ -111,3 +115,33 @@ def test_openapi_documents_import_route(client: TestClient) -> None:
     paths = client.get("/openapi.json").json()["paths"]
     assert "/api/studies/import" in paths
     assert "/api/jobs/{job_id}" in paths
+
+
+def test_import_with_deidentification(client: TestClient, data_dir: Path) -> None:
+    study_uid = generate_uid()
+    series_uid = generate_uid()
+    source = data_dir / "incoming" / "phi"
+    for index in range(2):
+        write_mr_slice(
+            source / f"slice_{index}.dcm",
+            study_uid=study_uid,
+            series_uid=series_uid,
+            instance_number=index + 1,
+            image_position=(0.0, 0.0, float(index) * 2.0),
+            extra={"PatientName": "Doe^John", "PatientID": "999"},
+        )
+
+    response = client.post(
+        "/api/studies/import",
+        json={"source_path": "incoming/phi", "deidentify": True},
+    )
+    assert response.status_code == 202
+    job = _wait_for_job(client, response.json()["job_id"])
+
+    assert job["status"] == "completed"
+    assert job["payload"]["result"]["deidentified"] == 2
+    derived = data_dir / "derived" / "deidentified"
+    copies = sorted(derived.rglob("*.dcm"))
+    assert len(copies) == 2
+    assert pydicom.dcmread(copies[0]).PatientName == "ANONYMOUS"
+    assert pydicom.dcmread(source / "slice_0.dcm").PatientName == "Doe^John"

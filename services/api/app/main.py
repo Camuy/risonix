@@ -23,6 +23,8 @@ def _make_import_handler(settings: Settings):
     """Costruisce l'handler che esegue un import nella sessione del worker."""
 
     def handler(session: Session, payload: dict[str, Any]) -> dict[str, Any]:
+        requested = payload.get("deidentify")
+        deidentify = settings.deidentify if requested is None else bool(requested)
         result = import_study(
             session,
             payload["source_path"],
@@ -30,6 +32,9 @@ def _make_import_handler(settings: Settings):
             build_volumes=bool(payload.get("build_volumes", True)),
             volume_format=cast(VolumeFormat, payload.get("volume_format", "nifti")),
             allow_irregular=bool(payload.get("allow_irregular", False)),
+            deidentify=deidentify,
+            deidentify_salt=settings.deidentify_salt,
+            deidentify_remap_uids=settings.deidentify_remap_uids,
         )
         return result.to_dict()
 
