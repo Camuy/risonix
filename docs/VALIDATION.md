@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato | Pre-alpha (*Phase 0*) — procedure in definizione |
+| Stato | Fase 1 (*DICOM Foundation*) — in corso |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](../MASTER_SPECIFICATION.md) |
 
@@ -59,6 +59,10 @@ mm sulle fixture sintetiche) definite all'implementazione della fase.
 - I dati reali **non** entrano nel repository (solo locale, `data/` gitignored).
 - Per i test automatici si usa un **generatore di DICOM sintetici** (issue
   P1-09), così che la CI sia riproducibile senza PHI.
+- Il generatore vive in `services/api/tests/support/dicom_factory.py`
+  (`generate_phantom`, `KNEE_PROTOCOL`): produce 9 serie MR a geometria nota,
+  con posizioni avanzate esattamente lungo la normale, quindi spacing e
+  orientamento sono riproducibili al bit.
 
 ---
 
@@ -170,3 +174,71 @@ Prima di chiudere una fase:
 - [ ] Documentazione aggiornata (README, docs, `PROJECT_STATUS.md`)
 - [ ] Nessun PHI/segreto/peso tracciato
 - [ ] Limiti di risorsa rispettati o deviazione documentata
+
+---
+
+## 8. Validazione Fase 1 — DICOM Foundation (P1-09)
+
+### 8.1 Phantom sintetico a geometria nota
+
+`generate_phantom(root, plans=KNEE_PROTOCOL)` scrive un esame RM del ginocchio
+sintetico con **9 serie** in `root`, una cartella per serie. Ogni slice è
+posizionata a `origin + normal · slice_spacing · i`, così la geometria attesa non
+dipende da `InstanceNumber` né dal nome file.
+
+| # | Serie | Piano | Slice | Spacing through-plane |
+| - | ----- | ----- | ----- | --------------------- |
+| 1 | Localizer | assiale | 3 | 4.0 mm |
+| 2 | Sag PD FS | sagittale | 5 | 3.5 mm |
+| 3 | Sag T2 | sagittale | 5 | 3.5 mm |
+| 4 | Sag T1 | sagittale | 5 | 3.5 mm |
+| 5 | Cor PD FS | coronale | 5 | 3.5 mm |
+| 6 | Cor T2 | coronale | 5 | 3.5 mm |
+| 7 | Ax PD FS | assiale | 5 | 4.0 mm |
+| 8 | Ax T2 | assiale | 5 | 4.0 mm |
+| 9 | 3D Sag T1 | sagittale | 6 | 2.0 mm |
+
+In-plane: `PixelSpacing` 0.5 × 0.5 mm, griglia 8 × 8.
+
+### 8.2 Cosa copre la suite
+
+| Ambito | Test | File |
+| ------ | ---- | ---- |
+| Scansione / DICOMDIR / ZIP | P1-01 | `tests/dicom/test_scanner.py` |
+| Raggruppamento e classificazione | P1-02 | `tests/dicom/test_study.py` |
+| Metadati e rescale | P1-03 | `tests/dicom/test_metadata.py` |
+| Ordinamento, spacing, gap, orientamento | P1-04 | `tests/dicom/test_geometry.py` |
+| Volume NIfTI/NRRD e provenienza | P1-05 | `tests/dicom/test_volume.py` |
+| **Phantom 9 serie (grouping, geometria, volumi)** | **P1-09** | **`tests/dicom/test_phantom.py`** |
+| Import API end-to-end | P1-07 | `tests/api/test_import_api.py` |
+| **Import end-to-end del phantom 9 serie** | **P1-09** | **`tests/api/test_e2e_import.py`** |
+| Job runner asincrono | P1-07 | `tests/jobs/test_runner.py` |
+| Import service (DB + volumi) | P1-07 | `tests/services/test_import_service.py` |
+| De-identificazione e sanitizzazione log | P1-08 | `tests/dicom/test_deident.py`, `tests/test_sanitize.py` |
+
+L'import end-to-end del phantom verifica: **1 studio, 9 serie immagine, 9
+volumi** (uno per serie), `slice_index` contiguo `0…n-1` per ogni serie e
+coerenza `shape[2] == instance_count`.
+
+### 8.3 Dataset reale (opzionale)
+
+Il dataset clinico non è nel repository. Per validarlo in locale:
+
+```bash
+# con il dataset posizionato in una directory accessibile:
+MRI_VALIDATION_DATASET=/percorso/al/dataset MRI_VALIDATION_EXPECTED_SERIES=9 \
+  docker compose -f compose.tools.yaml run --rm api-tools pytest tests/test_real_dataset.py
+```
+
+Il test `tests/test_real_dataset.py` viene **saltato** quando
+`MRI_VALIDATION_DATASET` non è impostata; quando presente, verifica che lo studio
+si raggruppi in 9 serie immagine e che ogni serie abbia geometria determinabile
+(ordinamento completo e normale non nulla).
+
+### 8.4 Esito
+
+Tutta la suite (`make api-test`) è verde in Docker: **100 test passati, 1
+saltato** (validazione dataset reale, §8.3), coprendo parser, raggruppamento,
+metadati, geometria, volumi, persistenza, API, job, de-identificazione e la
+validazione del phantom 9 serie. La validazione sul dataset reale resta una
+procedura manuale opzionale (§8.3), da ripetere quando il dataset è disponibile.

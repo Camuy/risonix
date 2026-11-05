@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato complessivo | **Pre-alpha** — Fase 0 completata, Fase 1 in avvio |
+| Stato complessivo | **Pre-alpha** — Fase 0 completata, Fase 1 implementata e validata |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
@@ -34,13 +34,20 @@ fase.
   pre-commit), documentato in `docs/DEVELOPMENT.md` — issue P0-08.
 - CI GitHub Actions (`.github/workflows/ci.yml`): qualità, validazione Compose,
   scansione segreti e build immagini `linux/arm64` — issue P0-09.
+- Fondamenta DICOM: scansione (DICOMDIR/ZIP), raggruppamento studio/serie,
+  metadati normalizzati, geometria validata, volumi NIfTI/NRRD — issue
+  P1-01…P1-05.
+- Persistenza SQLite + Alembic e livello repository — issue P1-06.
+- API REST di import/consultazione con job asincroni — issue P1-07.
+- De-identificazione opzionale e sanitizzazione dei log — issue P1-08.
+- Phantom sintetico a 9 serie e validazione end-to-end — issue P1-09.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
 | Fase | Stato | Note |
 | ---- | ----- | ---- |
 | Phase 0 — Environment & Architecture | ✅ | Repo, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config, tooling e CI |
-| Phase 1 — DICOM Foundation | ⬜ | |
+| Phase 1 — DICOM Foundation | ✅ | Scanner/grouping/metadati/geometria/volumi, persistenza, API+jobs, de-id, validazione phantom 9 serie |
 | Phase 2 — DICOM Workstation | ⬜ | |
 | Phase 3 — MPR & 3D | ⬜ | |
 | Phase 4 — Segmentation Lab | ⬜ | |
@@ -67,6 +74,15 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F10 | `compose.yaml`: profili, limiti risorse, volumi, healthcheck, shutdown | ✅ | P0-03 |
 | F11 | Orthanc opzionale (profilo `dicom`), storage persistente, DICOMweb | ✅ | P0-07 |
 | F12 | Tooling di sviluppo in Docker (Makefile: lint/format/typecheck/test/hooks) | ✅ | P0-08 |
+| F13 | Scanner DICOM (ricorsivo, DICOMDIR, ZIP con difesa zip-slip) | ✅ | P1-01 |
+| F14 | Raggruppamento studio/serie e classificazione delle istanze | ✅ | P1-02 |
+| F15 | Metadati DICOM normalizzati (rescale, spacing, orientamento) | ✅ | P1-03 |
+| F16 | Motore geometrico (ordinamento, spacing, gap, orientamento) | ✅ | P1-04 |
+| F17 | Volume builder NIfTI/NRRD con provenienza e checksum | ✅ | P1-05 |
+| F18 | Persistenza SQLite + Alembic e livello repository | ✅ | P1-06 |
+| F19 | API REST import/consultazione + job asincroni | ✅ | P1-07 |
+| F20 | De-identificazione opzionale e sanitizzazione log | ✅ | P1-08 |
+| F21 | Phantom sintetico 9 serie + validazione end-to-end | ✅ | P1-09 |
 
 ---
 
@@ -108,8 +124,9 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. Avviare la **Phase 1 — Fondamenta DICOM** (import e indicizzazione dataset).
-2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5).
+1. Aprire le PR delle issue P1-01…P1-09 verso `master` e mergiarle.
+2. Avviare la **Phase 2 — DICOM Workstation** (viewer e consultazione serie).
+3. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5).
 
 ---
 
