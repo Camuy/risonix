@@ -85,3 +85,24 @@ I servizi applicativi leggono **solo** variabili con prefisso `MRI_`
   - `MRI_LOG_FORMAT` è `Literal["json", "text"]`.
 - I log strutturati includono timestamp, livello, logger e messaggio, **senza**
   valori di configurazione sensibili.
+
+---
+
+## 6. Database, migrazioni e backup
+
+- Il database SQLite vive in `MRI_DB_PATH` (default `/data/database/mri.sqlite3`).
+  Contiene **solo metadati e riferimenti**: nessun array immagine.
+- Lo schema è gestito da **Alembic**. Le migrazioni si trovano in
+  `services/api/migrations/` e si applicano da zero con:
+
+  ```sh
+  docker compose -f compose.tools.yaml run --rm api-tools \
+    alembic -c services/api/alembic.ini upgrade head
+  ```
+
+  In alternativa, dal codice: `from app.db.migrate import upgrade_to_head`, poi
+  `upgrade_to_head(settings.db_path)`.
+- **Backup di base**: `app.db.backup.backup_database(db_path)` crea una copia
+  consistente (anche a database in uso) in `data/database/backups/`, con
+  timestamp UTC nel nome. Il ripristino avviene sostituendo il file a servizio
+  fermo. La rotazione è manuale: nessuna cancellazione automatica.
