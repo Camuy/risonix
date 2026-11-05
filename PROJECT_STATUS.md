@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato complessivo | **Pre-alpha** — Fasi 0 e 1 completate, Fase 2 avviata |
+| Stato complessivo | **Pre-alpha** — Fasi 0, 1 e 2 completate, Fase 3 pronta ad avviarsi |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
@@ -43,6 +43,25 @@ fase.
 - Phantom sintetico a 9 serie e validazione end-to-end — issue P1-09.
 - App shell della workstation (layout a pannelli, viewport, toolbar, status bar)
   e design system dark con token — issue P2-01.
+- Integrazione Cornerstone3D (rendering engine + tool group) e loader immagini
+  DICOM via endpoint `GET /api/instances/{id}/file`, con rendering dello stack e
+  rilascio delle risorse — issue P2-02.
+- Series explorer con thumbnail (lazy) e categorizzazione correggibile
+  manualmente, con override persistito per `SeriesInstanceUID` — issue P2-03.
+- Rendering e navigazione dello stack (rotellina, tastiera, slider), rotazione,
+  inversione toni, reset e fit coordinati, coordinate fisiche a schermo — issue
+  P2-04.
+- Layout multi-viewport 1 / 2H / 2V / 4 con crosshair e navigazione sincronizzati
+  per `FrameOfReferenceUID` — issue P2-05.
+- Strumenti di misura (lunghezza, angolo, polilinea, mano libera, sonda-sfera),
+  annotazioni modificabili/cancellabili ed etichette di orientamento L/R, A/P,
+  S/I — issue P2-06.
+- Pannello proprietà con metadati della serie, slice corrente e sezione
+  predisposta per la segmentazione — issue P2-07.
+- Prestazioni frontend: lazy loading delle viste (code-splitting di
+  Cornerstone3D), prefetch delle slice adiacenti, cache immagini limitata,
+  riduzione dei re-render (coordinate senza re-render) e baseline del bundle —
+  issue P2-08.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
@@ -50,7 +69,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | ---- | ----- | ---- |
 | Phase 0 — Environment & Architecture | ✅ | Repo, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config, tooling e CI |
 | Phase 1 — DICOM Foundation | ✅ | Scanner/grouping/metadati/geometria/volumi, persistenza, API+jobs, de-id, validazione phantom 9 serie |
-| Phase 2 — DICOM Workstation | 🚧 | App shell e design system della workstation (P2-01) |
+| Phase 2 — DICOM Workstation | ✅ | App shell e design system (P2-01); Cornerstone3D e loader (P2-02); series explorer (P2-03); navigazione stack (P2-04); multi-viewport e crosshair (P2-05); misure e annotazioni (P2-06); pannello proprietà (P2-07); prestazioni e code-splitting (P2-08) |
 | Phase 3 — MPR & 3D | ⬜ | |
 | Phase 4 — Segmentation Lab | ⬜ | |
 | Phase 5 — AI Engine | ⬜ | |
@@ -86,6 +105,13 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F20 | De-identificazione opzionale e sanitizzazione log | ✅ | P1-08 |
 | F21 | Phantom sintetico 9 serie + validazione end-to-end | ✅ | P1-09 |
 | F22 | App shell e design system della workstation (pannelli, viewport, toolbar, status bar) | ✅ | P2-01 |
+| F23 | Integrazione Cornerstone3D e loader immagini (viewport stack, endpoint file DICOM, disposal) | ✅ | P2-02 |
+| F24 | Series explorer con thumbnail lazy e categorizzazione manuale persistita | ✅ | P2-03 |
+| F25 | Navigazione stack, rotazione, inversione, reset/fit e coordinate fisiche | ✅ | P2-04 |
+| F26 | Layout multi-viewport 1/2H/2V/4 e sincronizzazione crosshair | ✅ | P2-05 |
+| F27 | Misure, annotazioni e etichette di orientamento | ✅ | P2-06 |
+| F28 | Pannello proprietà metadati, slice corrente e sezione segmentazione | ✅ | P2-07 |
+| F29 | Prestazioni frontend: code-splitting, prefetch, cache limitata e baseline | ✅ | P2-08 |
 
 ---
 
@@ -127,9 +153,10 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. Proseguire la **Phase 2 — DICOM Workstation**: viewer multi-viewport con
-   Cornerstone3D (P2-02) e consultazione delle serie.
-2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5).
+1. Avviare la **Phase 3 — MPR & 3D**: servizio di preparazione volume (P3-01) e
+   viewer MPR con crosshair sincronizzati (P3-02).
+2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5) e
+   raccogliere la baseline di memoria/FPS sul target M1 Pro (P2-08 → P7-01).
 
 ---
 

@@ -38,9 +38,10 @@ La specifica tecnica completa è in [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICA
 
 ## Stato del progetto
 
-**Pre-alpha** — Fasi 0 e 1 complete: ambiente Docker riproducibile e fondamenta
-DICOM (import, geometria, volumi, API REST). In corso la *Phase 2 — DICOM
-Workstation* (app shell e design system).
+**Pre-alpha** — Fasi 0, 1 e 2 complete: ambiente Docker riproducibile, fondamenta
+DICOM (import, geometria, volumi, API REST) e workstation DICOM (viewer
+multi-viewport Cornerstone3D, misure, annotazioni). In avvio la *Phase 3 — MPR &
+3D*.
 
 - Stato corrente, decisioni e funzionalità: [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 - Pianificazione incrementale: [`docs/ROADMAP.md`](docs/ROADMAP.md)
@@ -125,7 +126,8 @@ Le versioni esatte vengono **pinnate dopo validazione di compatibilità ARM64** 
 
 ## Quickstart
 
-> ⚠️ **Stato: pre-alpha.** L'ambiente Docker è in fase di costruzione (*Phase 0*). I comandi seguenti descrivono il flusso previsto e saranno attivati al completamento della Phase 0.
+> ⚠️ **Stato: pre-alpha.** Fasi 0, 1 e 2 complete. Lo stack base è eseguibile;
+> import, consultazione e viewer DICOM (multi-viewport, misure) sono attivi.
 
 ```bash
 # 1. Clonare il repository
@@ -138,16 +140,22 @@ cp .env.example .env
 # 3. Avviare lo stack base (frontend + API) — profilo `default`
 docker compose up --build
 
-# 4. (Opzionale) abilitare il servizio AI — profilo `ai`
+# 4. (Opzionale) importare un esame DICOM già presente in `data/`, poi aprire
+#    il viewer su http://localhost:5173
+curl -fsS -X POST http://localhost:8000/api/studies/import \
+  -H 'Content-Type: application/json' \
+  -d '{"source_path":"DICOMDIR"}'
+
+# 5. (Opzionale) abilitare il servizio AI — profilo `ai`
 docker compose --profile default --profile ai up --build
 
-# 5. (Opzionale) abilitare Orthanc — profilo `dicom`
+# 6. (Opzionale) abilitare Orthanc — profilo `dicom`
 docker compose --profile default --profile dicom up --build
 
-# 6. (Opzionale) tutta la piattaforma (base + AI + Orthanc) — profilo `full`
+# 7. (Opzionale) tutta la piattaforma (base + AI + Orthanc) — profilo `full`
 docker compose --profile full up --build
 
-# 7. (Opzionale) profilo di produzione locale (React su Nginx + reverse proxy)
+# 8. (Opzionale) profilo di produzione locale (React su Nginx + reverse proxy)
 COMPOSE_PROFILES=prod docker compose up --build
 ```
 

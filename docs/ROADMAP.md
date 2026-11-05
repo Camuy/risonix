@@ -2,8 +2,8 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato | Pre-alpha (*Phase 0*) |
-| Ultima modifica | 2026-11-04 |
+| Stato | Pre-alpha (*Phase 3*) |
+| Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](../MASTER_SPECIFICATION.md) |
 
 Lo sviluppo è **incrementale, per fasi**. Ogni fase produce software funzionante
