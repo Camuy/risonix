@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 | ----- | ------ |
-| Stato complessivo | **Pre-alpha** — Fasi 0, 1 e 2 completate, Fase 3 pronta ad avviarsi |
+| Stato complessivo | **Pre-alpha** — Fasi 0, 1 e 2 completate; Fase 3 in corso (P3-01 completata) |
 | Ultima modifica | 2026-11-05 |
 | Riferimento | [`MASTER_SPECIFICATION.md`](MASTER_SPECIFICATION.md) |
 
@@ -62,6 +62,11 @@ fase.
   Cornerstone3D), prefetch delle slice adiacenti, cache immagini limitata,
   riduzione dei re-render (coordinate senza re-render) e baseline del bundle —
   issue P2-08.
+- Servizio volumi e base volume client: router `/api/volumes` (list/get/download
+  NIfTI/NRRD con geometria completa e affinità LPS), volume streaming
+  Cornerstone dagli imageId dello stack (allineato al volume su disco),
+  `addVolumesToViewports` e comunicazione dei limiti dello spacing anisotropo —
+  issue P3-01.
 
 Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 
@@ -70,7 +75,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | Phase 0 — Environment & Architecture | ✅ | Repo, documenti, pinning ARM64, Compose, container frontend/backend/AI/Orthanc, config, tooling e CI |
 | Phase 1 — DICOM Foundation | ✅ | Scanner/grouping/metadati/geometria/volumi, persistenza, API+jobs, de-id, validazione phantom 9 serie |
 | Phase 2 — DICOM Workstation | ✅ | App shell e design system (P2-01); Cornerstone3D e loader (P2-02); series explorer (P2-03); navigazione stack (P2-04); multi-viewport e crosshair (P2-05); misure e annotazioni (P2-06); pannello proprietà (P2-07); prestazioni e code-splitting (P2-08) |
-| Phase 3 — MPR & 3D | ⬜ | |
+| Phase 3 — MPR & 3D | 🚧 | Servizio volumi e base volume client (P3-01) |
 | Phase 4 — Segmentation Lab | ⬜ | |
 | Phase 5 — AI Engine | ⬜ | |
 | Phase 6 — Quantitative Research | ⬜ | |
@@ -112,6 +117,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | F27 | Misure, annotazioni e etichette di orientamento | ✅ | P2-06 |
 | F28 | Pannello proprietà metadati, slice corrente e sezione segmentazione | ✅ | P2-07 |
 | F29 | Prestazioni frontend: code-splitting, prefetch, cache limitata e baseline | ✅ | P2-08 |
+| F30 | Servizio volumi: API list/get/download NIfTI/NRRD, volume streaming client allineato e limiti di spacing | ✅ | P3-01 |
 
 ---
 
@@ -139,6 +145,7 @@ Legenda: ✅ fatto · 🚧 in corso · ⬜ non iniziato
 | R2 | Licenza del progetto (e impatto AGPL di Orthanc) | Governo | DEPENDENCIES §7 |
 | R3 | Soglie definitive di performance | Non bloccante | VALIDATION §5 |
 | R4 | Necessità effettiva di Orthanc nel flusso reale | Non bloccante | ARCHITECTURE D4 |
+| R5 | Parsing NIfTI lato client (fallback del volume) | Non bloccante | VALIDATION §10.1 |
 
 ---
 
@@ -153,8 +160,8 @@ progetto e il budget di memoria con AI attiva.
 
 ## 6. Prossimi passi immediati
 
-1. Avviare la **Phase 3 — MPR & 3D**: servizio di preparazione volume (P3-01) e
-   viewer MPR con crosshair sincronizzati (P3-02).
+1. Proseguire la **Phase 3 — MPR & 3D**: viewer MPR con crosshair sincronizzati
+   (P3-02) costruito sulla base volume di P3-01, poi VTK.js e scena 3D (P3-03).
 2. Aggiornare i tempi di build osservati in CI (`docs/DEVELOPMENT.md` §5) e
    raccogliere la baseline di memoria/FPS sul target M1 Pro (P2-08 → P7-01).
 

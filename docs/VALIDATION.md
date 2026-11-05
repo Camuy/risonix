@@ -237,11 +237,12 @@ si raggruppi in 9 serie immagine e che ogni serie abbia geometria determinabile
 
 ### 8.4 Esito
 
-Tutta la suite (`make api-test`) è verde in Docker: **100 test passati, 1
+Tutta la suite (`make api-test`) è verde in Docker: **110 test passati, 1
 saltato** (validazione dataset reale, §8.3), coprendo parser, raggruppamento,
-metadati, geometria, volumi, persistenza, API, job, de-identificazione e la
-validazione del phantom 9 serie. La validazione sul dataset reale resta una
-procedura manuale opzionale (§8.3), da ripetere quando il dataset è disponibile.
+metadati, geometria, volumi, persistenza, API, job, de-identificazione, la
+validazione del phantom 9 serie e l'API dei volumi di Fase 3 (§10). La
+validazione sul dataset reale resta una procedura manuale opzionale (§8.3), da
+ripetere quando il dataset è disponibile.
 
 ---
 
@@ -335,4 +336,38 @@ target M1 Pro sarà raccolta in P7-01.
 `make frontend-lint frontend-typecheck` e `npm run build` (in `frontend-tools`)
 sono verdi; la CI esegue `npm ci` sul lockfile aggiornato e la suite API
 (`make api-test`) resta verde.
+
+---
+
+## 10. Validazione Fase 3 — MPR & 3D (P3-01…)
+
+### 10.1 Servizio volumi e base volume client (P3-01)
+
+Il router `/api/volumes` espone i volumi derivati costruiti dal builder (P1-05),
+senza alcun resampling MPR lato server.
+
+| Caso | Atteso | Test (`tests/api/test_volumes_api.py`) |
+| ---- | ------ | ------------------------------------- |
+| Elenco e filtro per serie | `200`, volumi della serie | `test_list_and_filter_volumes` |
+| Dettaglio con geometria completa | `shape`, `spacing`, `affine_lps` 4×4 | `test_get_volume_detail_exposes_affine` |
+| Download NIfTI | `200`, `application/gzip`, magic `1f 8b` | `test_download_nifti_volume` |
+| Download NRRD | `200`, header `NRRD` | `test_download_nrrd_volume` |
+| Volume inesistente | `404` | `test_unknown_volume_returns_404` |
+
+Lato client `cornerstone/volume.ts` costruisce il volume **streaming** dagli
+stessi `imageId` dello stack (`createAndCacheVolume`): la geometria (spacing,
+origine, orientamento LPS) è per costruzione quella del volume su disco. In
+P3-01 il volume non viene aggiunto alle viewport, così il rendering a stack
+resta invariato; `addVolumesToViewports` è predisposto per il viewer MPR
+(P3-02) e lo spacing anisotropo è segnalato nel pannello proprietà.
+
+**Limite noto.** Il download NIfTI/NRRD è esposto dall'API come artefatto di
+interoperabilità (e fallback del file su disco), ma il *parsing* NIfTI lato
+client non è ancora disponibile: le dipendenze correnti (Cornerstone3D, VTK.js)
+non includono un volume loader NIfTI. Il percorso primario resta lo streaming
+dagli imageId; l'eventuale caricamento NIfTI è rimandato a quando servirà
+(vedi R5 in [`PROJECT_STATUS.md`](../PROJECT_STATUS.md#4-decisioni-aperte)).
+
+La verifica geometrica puntuale (MPR ↔ coordinate mondo, mesh ↔ volume) è
+demandata a P3-06 su phantom noto.
 

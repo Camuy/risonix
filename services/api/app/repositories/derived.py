@@ -24,6 +24,13 @@ class VolumeRepository(Repository[Volume]):
             )
         )
 
+    def list_all(self, *, series_id: int | None = None) -> list[Volume]:
+        """Tutti i volumi, eventualmente filtrati per serie."""
+        statement = select(Volume).order_by(Volume.id)
+        if series_id is not None:
+            statement = statement.where(Volume.series_fk == series_id)
+        return list(self.session.scalars(statement))
+
     def get_by_checksum(self, checksum_sha256: str) -> Volume | None:
         """Volume con il checksum indicato (se già costruito)."""
         return self.session.scalar(select(Volume).where(Volume.checksum_sha256 == checksum_sha256))

@@ -611,6 +611,7 @@
   padding-inline: var(--space-4);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
+  text-decoration: none;
 }
 
 .icon-button {
@@ -1040,6 +1041,11 @@
   margin: 0;
   font-size: var(--text-xs);
   line-height: 1.5;
+}
+
+.panel-section__actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 /* --- Utility ---------------------------------------------------------- */

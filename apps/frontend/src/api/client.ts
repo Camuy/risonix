@@ -56,6 +56,28 @@ export interface InstanceSummary {
   orientation: number[] | null;
 }
 
+/** Riferimento a un volume derivato con la sua geometria (P3-01). */
+export interface VolumeSummary {
+  id: number;
+  series_fk: number;
+  path: string;
+  provenance_path: string | null;
+  volume_format: string;
+  shape: number[] | null;
+  spacing: number[] | null;
+  origin: number[] | null;
+  normal: number[] | null;
+  dtype: string | null;
+  irregular: boolean;
+  checksum_sha256: string | null;
+}
+
+/** Volume derivato con geometria completa, affinità LPS inclusa (P3-01). */
+export interface VolumeDetail extends VolumeSummary {
+  affine_lps: number[][] | null;
+  created_at: string | null;
+}
+
 /** Studi indicizzati, ordinati per data (endpoint `GET /api/studies`). */
 export function fetchStudies(signal?: AbortSignal): Promise<StudySummary[]> {
   return getJson<StudySummary[]>('/api/studies', signal);
@@ -72,4 +94,20 @@ export function fetchSeriesInstances(
   signal?: AbortSignal,
 ): Promise<InstanceSummary[]> {
   return getJson<InstanceSummary[]>(`/api/series/${seriesId}/instances`, signal);
+}
+
+/** Volumi derivati, eventualmente filtrati per serie (`GET /api/volumes`). */
+export function fetchVolumes(seriesId?: number, signal?: AbortSignal): Promise<VolumeSummary[]> {
+  const query = seriesId === undefined ? '' : `?series_id=${seriesId}`;
+  return getJson<VolumeSummary[]>(`/api/volumes${query}`, signal);
+}
+
+/** Dettaglio di un volume con geometria completa (`GET /api/volumes/{id}`). */
+export function fetchVolume(volumeId: number, signal?: AbortSignal): Promise<VolumeDetail> {
+  return getJson<VolumeDetail>(`/api/volumes/${volumeId}`, signal);
+}
+
+/** URL di download del file NIfTI/NRRD di un volume (`GET /api/volumes/{id}/download`). */
+export function volumeDownloadUrl(volumeId: number): string {
+  return `${API_BASE_URL}/api/volumes/${volumeId}/download`;
 }
