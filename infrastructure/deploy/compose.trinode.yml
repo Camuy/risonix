@@ -1,0 +1,47 @@
+# =============================================================================
+# Risonix — override per la VPS Trinode (2.28.4.101)
+#
+# Risonix gira come progetto Compose separato (`risonix`) accanto allo stack
+# Trinode. L'unico ingresso pubblico resta il proxy di Trinode (`trinode-caddy`,
+# porte 80/443): Risonix non pubblica porte sull'host e si aggancia alla rete
+# Docker condivisa `trinode_edge` con l'alias `resonix`, così il Caddy di Trinode
+# lo raggiunge per nome.
+#
+# Uso (sulla VPS, dalla radice del repo):
+#   docker compose -f compose.yaml -f infrastructure/deploy/compose.trinode.yml \
+#     --profile prod up -d --build
+#
+# Vhost Caddy corrispondente (in /opt/trinode/infra/caddy/Caddyfile.prod):
+#   resonix.trinode.ee {
+#       encode zstd gzip
+#       reverse_proxy resonix:80
+#   }
+#
+# Requisiti sul server:
+#   - rete Docker esterna `trinode_edge` (creata dallo stack Trinode);
+#   - DNS `resonix.trinode.ee` → IP della VPS (per il certificato ACME).
+# =============================================================================
+
+services:
+  # Build same-origin: la SPA chiama `/api/...`, inoltrato da `nginx` all'API.
+  mri-frontend-prod:
+    build:
+      args:
+        VITE_API_BASE_URL: ""
+
+  # Ingresso interno del progetto: raggiunto da `trinode-caddy` sulla rete
+  # condivisa. Nessuna porta sull'host (l'80/443 sono di Trinode).
+  nginx:
+    container_name: resonix-nginx
+    ports: !reset []
+    networks:
+      mri-net: {}
+      trinode_edge:
+        aliases:
+          - resonix
+
+networks:
+  # Creata da Trinode (`name: trinode_edge`), non va creata né rimossa qui.
+  trinode_edge:
+    external: true
+    name: trinode_edge

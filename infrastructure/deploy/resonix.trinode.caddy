@@ -1,0 +1,19 @@
+# --- Risonix (resonix.trinode.ee) ------------------------------------------
+# Applicazione Risonix, progetto Compose separato sulla stessa VPS, dietro
+# questo proxy. Raggiunta sulla rete Docker condivisa `trinode_edge` (alias
+# `resonix`). Nessun CSP restrittivo: la SPA (Cornerstone3D/VTK.js) usa blob
+# worker e WebAssembly. Da incollare in /opt/trinode/infra/caddy/Caddyfile.prod.
+resonix.trinode.ee {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	reverse_proxy resonix:80
+	log {
+		output stdout
+		format console
+	}
+}
