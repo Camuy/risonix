@@ -139,7 +139,14 @@ export async function addVolumeToViewports(
   );
 }
 
-/** Rilascia il volume della serie dalla cache (risorse GPU e pixel). */
+/**
+ * Rilascia il volume della serie dalla cache (pixel, buffer scalare e texture
+ * GPU). Idempotente: se il volume non è in cache non fa nulla, così può essere
+ * invocata in sicurezza allo smontaggio anche quando la creazione è fallita o
+ * non è mai avvenuta (P3-01).
+ */
 export function removeSeriesVolume(seriesId: number): void {
-  cache.removeVolumeLoadObject(seriesVolumeId(seriesId));
+  const volumeId = seriesVolumeId(seriesId);
+  if (!cache.getVolume(volumeId)) return;
+  cache.removeVolumeLoadObject(volumeId);
 }

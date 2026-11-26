@@ -27,7 +27,6 @@ import {
   unregisterPresentationSync,
 } from '../cornerstone/presentationSync';
 import { prefetchNeighborSlices } from '../cornerstone/viewportControls';
-import { ensureSeriesVolume } from '../cornerstone/volume';
 import { SLICE_CHANGE_EVENT, type SliceChangeDetail } from '../cornerstone/events';
 import { StateMessage } from './StateMessage';
 
@@ -213,13 +212,6 @@ export function StackViewport({ stack, viewportId, active, onActivate }: StackVi
       initializedRef.current = true;
       prefetchNeighborSlices(stack.imageIds, middleIndex);
       announceSlice(middleIndex);
-
-      // Prepara il volume streaming della serie (P3-01): è la base geometrica
-      // di MPR e 3D. Non viene aggiunto alle viewport, quindi il rendering a
-      // stack resta invariato; il volume è opzionale e non blocca la vista.
-      void ensureSeriesVolume(stack.series.id, stack.imageIds).catch(() => {
-        /* volume non disponibile: il viewer a stack continua a funzionare */
-      });
 
       const forUID = viewport.getFrameOfReferenceUID();
       if (forUID) {
