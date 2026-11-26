@@ -31,6 +31,11 @@ CMD ["npm", "run", "dev"]
 FROM ${NODE_IMAGE} AS build
 WORKDIR /app
 ENV NODE_ENV=production
+# Base URL delle API compilata nella SPA. Vuoto = richieste same-origin
+# (`/api/...`), che è il caso di produzione dietro un reverse proxy (es. il
+# Caddy di Trinode su resonix.trinode.ee, o l'Nginx del profilo `prod`).
+ARG VITE_API_BASE_URL=
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
