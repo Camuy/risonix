@@ -546,13 +546,6 @@
   color: var(--color-text-faint);
 }
 
-.viewport__clip-row {
-  display: grid;
-  grid-template-columns: auto 34px 1fr;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .viewport__clip-axis {
   color: var(--color-text);
 }
@@ -568,9 +561,44 @@
   opacity: 0.4;
 }
 
-.viewport__clip-row input[type='checkbox'] {
+/* Piano di taglio arbitrario della scena 3D (P3-04) */
+.viewport__cut {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewport__cut-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.viewport__cut-toggle input[type='checkbox'] {
   accent-color: var(--color-accent);
   cursor: pointer;
+}
+
+.viewport__cut-subtitle {
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.viewport__cut-row {
+  display: grid;
+  grid-template-columns: 20px 40px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.viewport__cut-value {
+  color: var(--color-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .viewport__clip-action {
@@ -586,6 +614,55 @@
 .viewport__clip-action:hover {
   color: var(--color-text);
   border-color: var(--color-border-strong);
+}
+
+/* Selettore modalità di resa della scena 3D (P3-04) */
+.viewport__modes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewport__modes-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.viewport__clip-action--active {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  background: color-mix(in oklch, var(--color-accent) 18%, transparent);
+}
+
+/* Slider isovalore della superficie (P3-04) */
+.viewport__surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Resa volumetrica: preset di transfer function e composizione (P3-04) */
+.viewport__volume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewport__select {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-overlay);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
 }
 
 /* Coordinate fisiche del puntatore (P2-04/P2-06) */

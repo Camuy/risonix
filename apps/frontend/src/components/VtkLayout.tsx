@@ -56,6 +56,7 @@ export function VtkLayout({ selection, status, onRetry }: VtkLayoutProps) {
 
   const seriesVolume = volume.state === 'ready' ? volume.volume : null;
   const ready = stackState.state === 'ready' && seriesVolume !== null;
+  const modality = stackState.state === 'ready' ? stackState.stack.series.modality : null;
   const message = viewerMessage(stackState, volume);
 
   return (
@@ -63,7 +64,11 @@ export function VtkLayout({ selection, status, onRetry }: VtkLayoutProps) {
       <div className="pane" data-active="true">
         <div className="pane__stage">
           {ready && seriesVolume ? (
-            <VtkViewport geometry={seriesVolume.geometry} />
+            <VtkViewport
+              geometry={seriesVolume.geometry}
+              volumeId={seriesVolume.volumeId}
+              modality={modality}
+            />
           ) : (
             <StateMessage
               compact

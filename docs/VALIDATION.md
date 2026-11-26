@@ -433,7 +433,7 @@ effetto collaterale, dichiarato in `src/vtk/vtk-modules.d.ts`.
 
 **Distinzione da P3-04.** Qui *non* si fa volume rendering né ricostruzione di
 superficie: la scena fornisce il sistema di riferimento (inviluppo, orientamento,
-clipping) entro cui P3-04 inserirà volume rendering e mesh.
+clipping) entro cui P3-04 inserisce volume rendering e mesh (vedi §10.4).
 
 **Verifica.** Montaggio su GPU reale (Chrome headless, ANGLE Metal su M1 Pro):
 contesto `WebGL 2.0`, `gl.getError() = 0`; il box orientato e il gizmo sono
@@ -446,5 +446,37 @@ ruotare/zoomare/panare, abilitare un piano di clipping e verificarne l'effetto;
 confrontare il bounding box con origine/dimensioni/spacing del volume esposti da
 `GET /api/volumes/{id}`. La verifica geometrica puntuale (mesh ↔ volume) resta
 demandata a P3-06.
+
+### 10.4 Volume rendering e surface reconstruction (P3-04)
+
+La scena 3D offre tre modalità di resa **separate**, selezionabili dal pannello
+dei controlli: **Box** (solo inviluppo orientato, comportamento P3-03),
+**Volume** (ray-casting) e **Superficie** (ricostruzione iso).
+
+| Aspetto | Implementazione | Invariante |
+| ------- | --------------- | ---------- |
+| Dati voxel | `voxelManager.getCompleteScalarDataArray()` del volume Cornerstone, copiato in un `vtkImageData` dedicato | il `vtkImageData` dell'MPR non viene mutato; stesso spacing/origine/direzione del volume |
+| Volume rendering | `vtkVolumeMapper` (profilo Volume) su `vtkImageData`, `vtkColorTransferFunction` + `vtkPiecewiseFunction`, `sampleDistance = min(spacing) / 2` con `autoAdjustSampleDistances` | campionamento allineato alla spaziatura; massimo 2000 campioni per raggio |
+| Range di visualizzazione | istogramma a 4096 bin su un campione massimo di 250 000 voxel; percentili 0,5%–99,5% | il transfer function e l'isovalore di default ignorano gli outlier (aria, metalli, rumore) |
+| Surface reconstruction | `ImageMarchingCubes` (`contourValue` regolabile, `computeNormals`, `mergePoints`) → `vtkMapper`/`vtkActor` | la mesh è orientata con la direzione del volume tramite user matrix (`w = D·(p−origin)+origin`) |
+| Isovalore | slider sul range grezzo di intensità del volume; default al punto medio del range robusto; debounce 120 ms | il valore è sempre dentro il range corrente |
+| Clipping | i tre piani paziente sono aggiunti a **tutti** i mapper attivi (box, volume, superficie) | l'abilitazione di un piano erode coerentemente ogni modalità |
+| Caricamento progressivo | ascolto di `IMAGE_VOLUME_LOADING_COMPLETED` filtrato per `volumeId` | al termine i dati parziali sono scartati e la modalità attiva viene ricostruita |
+| Disposal | `dispose()` rimuove listener, attori, mapper, filtri, array scalari e piani | nessun leak di contesto WebGL o di memoria voxel al cambio layout |
+
+**Code-splitting.** L'import del profilo Volume di VTK.js incrementa il chunk
+`VtkLayout-*.js` (circa 130 kB / 34 kB gzip), caricato solo entrando nel layout
+3D. La build di produzione completa con successo; restano i warning noti di
+Rolldown sull'esternalizzazione di `fs`/`path`/`url` nei codec WASM di
+Cornerstone e sulla dimensione del chunk `init` (~3.6 MB / ~979 kB gzip),
+ereditati da P2-08 e non introdotti da P3-04.
+
+**Verifica.** Typecheck (`tsc --noEmit`), lint (`eslint .`) e build di
+produzione (`vite build`) passano. Procedura manuale (phantom §8): aprire il
+layout **3D**, selezionare **Volume** e verificare la resa del volume con il
+trasferimento colore/opacità; selezionare **Superficie**, regolare l'isovalore e
+verificare che la mesh cambi in modo coerente; abilitare un piano di clipping in
+ciascuna modalità e confrontare l'erosione con il box. La verifica geometrica
+puntuale della mesh rispetto al volume resta demandata a P3-06.
 
 
