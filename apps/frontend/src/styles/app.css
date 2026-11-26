@@ -413,6 +413,23 @@
   grid-template-rows: 1fr 1fr;
 }
 
+.viewport-grid[data-layout='mpr'] {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.viewport-grid[data-layout='3d'] {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+@media (max-width: 1100px) {
+  .viewport-grid[data-layout='mpr'] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+  }
+}
+
 .pane {
   position: relative;
   display: flex;
@@ -483,6 +500,169 @@
   font-family: var(--font-sans);
   font-size: var(--text-md);
   text-shadow: none;
+}
+
+/* Avviso di spacing anisotropo nell'MPR (P3-02) */
+.viewport__overlay--hint {
+  top: auto;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  left: auto;
+  align-items: flex-end;
+  text-align: right;
+  color: var(--color-warning, var(--color-text-muted));
+}
+
+/* Pannello piani di clipping della scena 3D (P3-03) */
+.viewport__clip {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 208px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--color-bg-raised) 88%, transparent);
+  box-shadow: var(--shadow-overlay);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-muted);
+}
+
+.viewport__clip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.viewport__clip-title {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
+}
+
+.viewport__clip-axis {
+  color: var(--color-text);
+}
+
+.viewport__clip-range {
+  width: 100%;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.viewport__clip-range:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Piano di taglio arbitrario della scena 3D (P3-04) */
+.viewport__cut {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewport__cut-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.viewport__cut-toggle input[type='checkbox'] {
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.viewport__cut-subtitle {
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.viewport__cut-row {
+  display: grid;
+  grid-template-columns: 20px 40px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.viewport__cut-value {
+  color: var(--color-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.viewport__clip-action {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-overlay);
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.viewport__clip-action:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+/* Selettore modalità di resa della scena 3D (P3-04) */
+.viewport__modes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewport__modes-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.viewport__clip-action--active {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  background: color-mix(in oklch, var(--color-accent) 18%, transparent);
+}
+
+/* Slider isovalore della superficie (P3-04) */
+.viewport__surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Resa volumetrica: preset di transfer function e composizione (P3-04) */
+.viewport__volume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewport__select {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-overlay);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
 }
 
 /* Coordinate fisiche del puntatore (P2-04/P2-06) */
@@ -611,6 +791,7 @@
   padding-inline: var(--space-4);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
+  text-decoration: none;
 }
 
 .icon-button {
@@ -1040,6 +1221,11 @@
   margin: 0;
   font-size: var(--text-xs);
   line-height: 1.5;
+}
+
+.panel-section__actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 /* --- Utility ---------------------------------------------------------- */

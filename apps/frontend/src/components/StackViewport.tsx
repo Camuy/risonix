@@ -247,9 +247,7 @@ export function StackViewport({ stack, viewportId, active, onActivate }: StackVi
         event.stopImmediatePropagation();
         return;
       }
-      const detail = (
-        event as CustomEvent<{ range?: { lower?: number; upper?: number } }>
-      ).detail;
+      const detail = (event as CustomEvent<{ range?: { lower?: number; upper?: number } }>).detail;
       const range = detail?.range;
       if (range && typeof range.lower === 'number' && typeof range.upper === 'number') {
         lockedVoiRef.current = { lower: range.lower, upper: range.upper };
@@ -482,7 +480,10 @@ export function StackViewport({ stack, viewportId, active, onActivate }: StackVi
       }
       viewportRef.current = null;
       unregisterViewport(viewportId);
-      ToolGroupManager.getToolGroup(TOOL_GROUP_ID)?.removeViewports(RENDERING_ENGINE_ID, viewportId);
+      ToolGroupManager.getToolGroup(TOOL_GROUP_ID)?.removeViewports(
+        RENDERING_ENGINE_ID,
+        viewportId,
+      );
       getRenderingEngine(RENDERING_ENGINE_ID)?.disableElement(viewportId);
     };
   }, [stack, viewportId, middleIndex, sliceCount]);

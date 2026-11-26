@@ -10,6 +10,7 @@ from app.models.schemas import (
     SeriesSummary,
     StudyDetail,
     StudySummary,
+    VolumeDetail,
     VolumeSummary,
 )
 
@@ -84,6 +85,16 @@ def volume_summary(volume: Volume) -> VolumeSummary:
     )
 
 
+def volume_detail(volume: Volume) -> VolumeDetail:
+    """Volume derivato con la geometria completa (affinità LPS) e la data."""
+    summary = volume_summary(volume)
+    return VolumeDetail(
+        **summary.model_dump(),
+        affine_lps=volume.affine_lps,
+        created_at=volume.created_at,
+    )
+
+
 def metadata_response(metadata: InstanceMetadata) -> MetadataResponse:
     """Metadati normalizzati di un'istanza, senza mai esporre i pixel."""
     return MetadataResponse.model_validate(metadata_to_dict(metadata))
@@ -95,5 +106,6 @@ __all__ = [
     "series_summary",
     "study_detail",
     "study_summary",
+    "volume_detail",
     "volume_summary",
 ]
